@@ -24,6 +24,7 @@ function renderModal(mode: 'login' | 'register'): void {
     body.innerHTML = `
       <h2>${escapeHtml(me.name)}</h2>
       <p class="muted">${escapeHtml(me.email)} · прогресс синхронизируется между устройствами</p>
+      ${me.isAdmin ? '<p class="muted"><b>Режим админа:</b> все уроки открыты, жизни не тратятся.</p>' : ''}
       <div class="field"><label for="remindHour">Когда утке напоминать</label>
         <select id="remindHour">${hours(me.remindHour)}</select>
         <small>Часовой пояс: ${escapeHtml(me.tz)}. В 23:00 будет ещё «последний шанс», если серия под угрозой.</small></div>

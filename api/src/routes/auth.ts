@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { clearSession, setSession } from '../auth.js';
+import { config } from '../config.js';
 import { pool } from '../db.js';
 
 const Register = z.object({
@@ -64,14 +65,16 @@ export async function authRoutes(app: FastifyInstance) {
     return { ok: true };
   });
 
-  app.get('/me', { preHandler: app.requireUser }, async (req) => {
+  app.get('/me', { preHandler: app.requireUser }, async (req, reply) => {
     const r = await pool.query(
       `select u.id, u.email, u.name, u.tz, u.remind_hour as "remindHour", coalesce(t.tier, 0) as tier,
               exists (select 1 from push_subs s where s.user_id = u.id) as "pushEnabled"
          from users u left join user_tier t on t.user_id = u.id where u.id = $1`,
       [req.user.uid],
     );
-    return r.rows[0] ?? null;
+    const me = r.rows[0];
+    if (!me) return reply.code(401).send({ error: 'Нужно войти' });
+    return { ...me, isAdmin: config.adminEmails.includes(String(me.email).toLowerCase()) };
   });
 
   app.patch('/me', { preHandler: app.requireUser }, async (req, reply) => {

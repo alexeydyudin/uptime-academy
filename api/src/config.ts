@@ -13,6 +13,11 @@ export const config = {
   staticDir: process.env.STATIC_DIR ?? '',
   // Секрет для внешнего планировщика (cron-job.org), который дёргает /api/jobs/tick
   cronSecret: process.env.CRON_SECRET ?? '',
+  // Почты админов через запятую: им открыты все уроки и не тратятся жизни
+  adminEmails: (process.env.ADMIN_EMAILS ?? '')
+    .split(',')
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean),
 };
 
 if (process.env.NODE_ENV === 'production' && config.jwtSecret === DEV_SECRET) {

@@ -356,7 +356,7 @@ const shift=(k,n)=>{const d=new Date(k+'T12:00:00');d.setDate(d.getDate()+n);ret
 const daysBetween=(a,b)=>Math.round((new Date(b+'T12:00:00')-new Date(a+'T12:00:00'))/864e5);
 function fresh(){return{onboarded:false,goal:30,xp:0,streak:0,best:0,lastDay:null,days:[],hearts:MAXH,heartsAt:Date.now(),done:{},code:null,review:[],league:{tier:0,week:null,xp:0,lastResult:null},daily:{date:TODAY(),xp:0,cmds:0,perfect:false,claimed:{}}}}
 let S;try{S=Object.assign(fresh(),JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(_){S=fresh()}
-const HOOKS={save:[],xp:[],leagueRows:null,leagueZones:null};
+const HOOKS={save:[],xp:[],leagueRows:null,leagueZones:null,unlockAll:false};
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(_){}HOOKS.save.forEach(f=>{try{f(S)}catch(_){}})};
 function ensureDaily(){if(S.daily.date!==TODAY())S.daily={date:TODAY(),xp:0,cmds:0,perfect:false,claimed:{}}}
 function heartsTick(){if(S.hearts<MAXH){const n=Math.floor((Date.now()-S.heartsAt)/HEART_MS);if(n>0){S.hearts=Math.min(MAXH,S.hearts+n);S.heartsAt+=n*HEART_MS;save()}}}
@@ -610,7 +610,7 @@ const LESSONS={
 };
 const ORDER=UNITS.flatMap(u=>u.lessons);
 const unitOf=id=>UNITS.find(u=>u.lessons.includes(id));
-const unlocked=id=>{const i=ORDER.indexOf(id);return i===0||S.done[ORDER[i-1]]};
+const unlocked=id=>{if(HOOKS.unlockAll)return true;const i=ORDER.indexOf(id);return i===0||S.done[ORDER[i-1]]};
 const nextLesson=()=>ORDER.find(id=>!S.done[id]);
 
 /* =================== fake shell =================== */
@@ -648,7 +648,7 @@ function sh(W,line){
     const m=W.files[p].split('\n').filter(l=>re.test(l));W.f.grep={pat:ar[0],file:p,count:cnt};r.out=cnt?String(m.length):m.join('\n');return r}
   case 'ps':r.out=[pad('USER',10)+pad('PID',7)+pad('%CPU',7)+pad('%MEM',7)+'COMMAND'].concat(W.procs.map(p=>pad(p.user,10)+pad(p.pid,7)+pad(p.cpu.toFixed(1),7)+pad(p.mem.toFixed(1),7)+p.cmd)).join('\n');return r;
   case 'kill':{const nine=a.some(x=>/^-(9|KILL|SIGKILL)$/.test(x));const pid=+a.filter(x=>!x.startsWith('-'))[1];const p=W.procs.find(x=>x.pid===pid);if(!pid||!p)return err(`kill: (${a[a.length-1]}) - No such process`);
-    if(p.ignoreTerm&&!nine){r.out='';return r}W.procs=W.procs.filter(x=>x!==p);return r}
+    if(p.ignoreTerm&&!nine){p.termTries=(p.termTries||0)+1;r.out=p.termTries>1?'Утка: снова SIGTERM, и снова мимо. Процесс его перехватывает. Нужен сигнал, который поймать нельзя.':'(процесс получил SIGTERM… но, похоже, проигнорировал его. Проверь ps aux)';r.cls='d';return r}W.procs=W.procs.filter(x=>x!==p);return r}
   case 'df':r.out=`Filesystem      Size  Used Avail Use% Mounted on\n/dev/nvme0n1p1   50G  ${String(Math.round(W.disk/2)).padStart(3)}G ${String(50-Math.round(W.disk/2)).padStart(4)}G ${String(W.disk).padStart(3)}% /\ntmpfs           2.0G     0  2.0G   0% /run`;return r;
   case 'rm':{const{fl,ar}=flagsArgs(a.slice(1));if(!ar[0])return err('rm: missing operand');const p=rp(W,ar[0]);if(['/','/etc','/var','/home','/home/dev','/var/log'].includes(p))return err('rm: утка заблокировала это. Не надо так с продом.');
     if(W.dirs.has(p)&&!fl.some(f=>/r/.test(f)))return err(`rm: cannot remove '${ar[0]}': Is a directory`);if(W.files[p]==null&&!W.dirs.has(p))return err(`rm: cannot remove '${ar[0]}': No such file or directory`);
@@ -783,7 +783,7 @@ function renderHome(){
   ensureWeek();const tier=S.league.tier,rows=(HOOKS.leagueRows&&HOOKS.leagueRows())||standings(S.league.week,tier,S.league.xp,weekFrac());const left=Math.max(1,7-Math.floor(weekFrac()*7));
   const z=(HOOKS.leagueZones&&HOOKS.leagueZones())||{up:tier<TIERS.length-1?3:0,down:tier>0?3:0};
   const ranked=rows.map((x,i)=>Object.assign({rank:i+1},x)),vis=ranked.slice(0,10);if(!vis.some(x=>x.me)){const mine=ranked.find(x=>x.me);if(mine)vis.push(mine)}
-  $('#leagueCard').innerHTML=`<h3>Лига «${TIERS[tier]}»</h3><div class="lgsub">${z.up?`Топ-${z.up} поднимаются`:'Высшая лига'}${z.down?`, последние ${z.down} вылетают`:''} · ${left} ${plural(left,'день','дня','дней')} до конца</div><ol class="lg">${vis.map(x=>`<li class="${x.me?'me':''} ${x.rank<=z.up?'up':''} ${x.rank>ranked.length-z.down?'down':''}"><b>${x.rank}</b><span>${esc(x.name)}</span><em>${x.xp} XP</em></li>`).join('')}</ol>`;
+  $('#leagueCard').innerHTML=`<h3>Лига «${TIERS[tier]}»</h3><div class="lgsub">${z.up?`Топ-${z.up} поднимаются`:tier>=TIERS.length-1?'Высшая лига':'Пока в группе мало игроков'}${z.down?`, последние ${z.down} вылетают`:''} · ${left} ${plural(left,'день','дня','дней')} до конца</div><ol class="lg">${vis.map(x=>`<li class="${x.me?'me':''} ${x.rank<=z.up?'up':''} ${x.rank>ranked.length-z.down?'down':''}"><b>${x.rank}</b><span>${esc(x.name)}</span><em>${x.xp} XP</em></li>`).join('')}</ol>`;
   // duck mood
   let mood='ok',say;const nl=nextLesson();const gap=S.lastDay?daysBetween(S.lastDay,TODAY()):0;
   if(S.hearts===0){mood='worry';const m=Math.ceil((HEART_MS-(Date.now()-S.heartsAt))/60000);say=`Жизни кончились, как error budget в Чёрную пятницу. Новая через ${m} мин. Можно пока повторить пройденный урок.`}
@@ -817,7 +817,7 @@ function renderHome(){
 let R=null;
 function startLesson(id){
   heartsTick();const L=LESSONS[id];
-  if(S.hearts===0&&!S.done[id]){toast('Жизни кончились. Повтори пройденный урок или подожди.');return}
+  if(S.hearts===0&&!S.done[id]&&!HOOKS.unlockAll){toast('Жизни кончились. Повтори пройденный урок или подожди.');return}
   if(L.boss){startBoss();return}
   R={id,L,steps:L.steps.map((s,i)=>Object.assign({},s,{__i:i})),i:0,mistakes:0,combo:0,bestCombo:0,t0:Date.now(),W:L.setup?L.setup():null,replay:!!S.done[id],stepStart:0,cmds:[],hist:[],hi:0,checked:false,firstTry:true,total:L.steps.length};
   show('lesson');renderStep();
@@ -894,7 +894,7 @@ function renderStep(){
 function line(O,text,cls){const d=document.createElement('div');if(cls)d.className=cls;d.textContent=text;O.append(d);O.scrollTop=O.scrollHeight}
 function good(ex){const cs=R.steps[R.i];if(R.review&&cs&&cs.__rv){S.review=S.review.filter(x=>x.l+':'+x.i!==cs.__rv);save()}R.combo++;R.bestCombo=Math.max(R.bestCombo,R.combo);$('#lCombo').textContent=R.combo>=3?`×${R.combo} подряд`:'';
   setFoot('ok',`${duckSVG('happy','duckmini')}<div><b>${pick(LINES.ok)}</b><span>${md(ex||'')}</span></div>`,'Дальше','ok');$('#lMain').onclick=next;setTimeout(()=>$('#lMain').focus({preventScroll:true}),0)}
-function bad(ex,s){R.mistakes++;R.combo=0;if(!R.review&&s.__i!=null)addReview(R.id,s.__i);if(!R.replay&&!R.review){S.hearts=Math.max(0,S.hearts-1);if(S.hearts===MAXH-1)S.heartsAt=Date.now();save()}$('#lHearts span').textContent=S.hearts;
+function bad(ex,s){R.mistakes++;R.combo=0;if(!R.review&&s.__i!=null)addReview(R.id,s.__i);if(!R.replay&&!R.review&&!HOOKS.unlockAll){S.hearts=Math.max(0,S.hearts-1);if(S.hearts===MAXH-1)S.heartsAt=Date.now();save()}$('#lHearts span').textContent=S.hearts;
   R.steps.push(Object.assign({},s,{retry:true,order:null}));
   setFoot('bad',`${duckSVG('angry','duckmini')}<div><b>${pick(LINES.bad)}</b><span>${md(ex)}</span></div>`,'Понятно','bad');
   $('#lMain').onclick=()=>{if(S.hearts===0&&!R.replay&&!R.review){outOfHearts();return}next()}}

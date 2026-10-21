@@ -1,5 +1,5 @@
 // @ts-nocheck — перенесено из однофайловой версии; типизация по мере рефакторинга
-import { S } from './state';
+import { S, HOOKS } from './state';
 /* curriculum */
 export const UNITS=[
  {id:'linux',n:1,c:'var(--u1)',title:'Терминал',sub:'pwd, ls, cd, cat, grep, ps, kill',lessons:['l1','l2','l3']},
@@ -192,5 +192,5 @@ export const LESSONS={
 };
 export const ORDER=UNITS.flatMap(u=>u.lessons);
 export const unitOf=id=>UNITS.find(u=>u.lessons.includes(id));
-export const unlocked=id=>{const i=ORDER.indexOf(id);return i===0||S.done[ORDER[i-1]]};
+export const unlocked=id=>{if(HOOKS.unlockAll)return true;const i=ORDER.indexOf(id);return i===0||S.done[ORDER[i-1]]};
 export const nextLesson=()=>ORDER.find(id=>!S.done[id]);

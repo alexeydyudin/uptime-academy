@@ -22,7 +22,7 @@ export function renderHome(){
   ensureWeek();const tier=S.league.tier,rows=(HOOKS.leagueRows&&HOOKS.leagueRows())||standings(S.league.week,tier,S.league.xp,weekFrac());const left=Math.max(1,7-Math.floor(weekFrac()*7));
   const z=(HOOKS.leagueZones&&HOOKS.leagueZones())||{up:tier<TIERS.length-1?3:0,down:tier>0?3:0};
   const ranked=rows.map((x,i)=>Object.assign({rank:i+1},x)),vis=ranked.slice(0,10);if(!vis.some(x=>x.me)){const mine=ranked.find(x=>x.me);if(mine)vis.push(mine)}
-  $('#leagueCard').innerHTML=`<h3>Лига «${TIERS[tier]}»</h3><div class="lgsub">${z.up?`Топ-${z.up} поднимаются`:'Высшая лига'}${z.down?`, последние ${z.down} вылетают`:''} · ${left} ${plural(left,'день','дня','дней')} до конца</div><ol class="lg">${vis.map(x=>`<li class="${x.me?'me':''} ${x.rank<=z.up?'up':''} ${x.rank>ranked.length-z.down?'down':''}"><b>${x.rank}</b><span>${esc(x.name)}</span><em>${x.xp} XP</em></li>`).join('')}</ol>`;
+  $('#leagueCard').innerHTML=`<h3>Лига «${TIERS[tier]}»</h3><div class="lgsub">${z.up?`Топ-${z.up} поднимаются`:tier>=TIERS.length-1?'Высшая лига':'Пока в группе мало игроков'}${z.down?`, последние ${z.down} вылетают`:''} · ${left} ${plural(left,'день','дня','дней')} до конца</div><ol class="lg">${vis.map(x=>`<li class="${x.me?'me':''} ${x.rank<=z.up?'up':''} ${x.rank>ranked.length-z.down?'down':''}"><b>${x.rank}</b><span>${esc(x.name)}</span><em>${x.xp} XP</em></li>`).join('')}</ol>`;
   // duck mood
   let mood='ok',say;const nl=nextLesson();const gap=S.lastDay?daysBetween(S.lastDay,TODAY()):0;
   if(S.hearts===0){mood='worry';const m=Math.ceil((HEART_MS-(Date.now()-S.heartsAt))/60000);say=`Жизни кончились, как error budget в Чёрную пятницу. Новая через ${m} мин. Можно пока повторить пройденный урок.`}
@@ -56,7 +56,7 @@ export function renderHome(){
 export let R=null;
 export function startLesson(id){
   heartsTick();const L=LESSONS[id];
-  if(S.hearts===0&&!S.done[id]){toast('Жизни кончились. Повтори пройденный урок или подожди.');return}
+  if(S.hearts===0&&!S.done[id]&&!HOOKS.unlockAll){toast('Жизни кончились. Повтори пройденный урок или подожди.');return}
   if(L.boss){startBoss();return}
   R={id,L,steps:L.steps.map((s,i)=>Object.assign({},s,{__i:i})),i:0,mistakes:0,combo:0,bestCombo:0,t0:Date.now(),W:L.setup?L.setup():null,replay:!!S.done[id],stepStart:0,cmds:[],hist:[],hi:0,checked:false,firstTry:true,total:L.steps.length};
   show('lesson');renderStep();
@@ -133,7 +133,7 @@ export function renderStep(){
 export function line(O,text,cls){const d=document.createElement('div');if(cls)d.className=cls;d.textContent=text;O.append(d);O.scrollTop=O.scrollHeight}
 export function good(ex){const cs=R.steps[R.i];if(R.review&&cs&&cs.__rv){S.review=S.review.filter(x=>x.l+':'+x.i!==cs.__rv);save()}R.combo++;R.bestCombo=Math.max(R.bestCombo,R.combo);$('#lCombo').textContent=R.combo>=3?`×${R.combo} подряд`:'';
   setFoot('ok',`${duckSVG('happy','duckmini')}<div><b>${pick(LINES.ok)}</b><span>${md(ex||'')}</span></div>`,'Дальше','ok');$('#lMain').onclick=next;setTimeout(()=>$('#lMain').focus({preventScroll:true}),0)}
-export function bad(ex,s){R.mistakes++;R.combo=0;if(!R.review&&s.__i!=null)addReview(R.id,s.__i);if(!R.replay&&!R.review){S.hearts=Math.max(0,S.hearts-1);if(S.hearts===MAXH-1)S.heartsAt=Date.now();save()}$('#lHearts span').textContent=S.hearts;
+export function bad(ex,s){R.mistakes++;R.combo=0;if(!R.review&&s.__i!=null)addReview(R.id,s.__i);if(!R.replay&&!R.review&&!HOOKS.unlockAll){S.hearts=Math.max(0,S.hearts-1);if(S.hearts===MAXH-1)S.heartsAt=Date.now();save()}$('#lHearts span').textContent=S.hearts;
   R.steps.push(Object.assign({},s,{retry:true,order:null}));
   setFoot('bad',`${duckSVG('angry','duckmini')}<div><b>${pick(LINES.bad)}</b><span>${md(ex)}</span></div>`,'Понятно','bad');
   $('#lMain').onclick=()=>{if(S.hearts===0&&!R.replay&&!R.review){outOfHearts();return}next()}}

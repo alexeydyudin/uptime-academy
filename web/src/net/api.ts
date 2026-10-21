@@ -35,6 +35,7 @@ export interface Me {
   remindHour: number;
   tier: number;
   pushEnabled: boolean;
+  isAdmin: boolean;
 }
 
 export interface LeagueRow {

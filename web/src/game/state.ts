@@ -14,8 +14,10 @@ export interface GameHooks {
   xp: ((amount: number) => void)[];
   leagueRows: null | (() => { name: string; xp: number; me?: boolean }[] | null);
   leagueZones: null | (() => { up: number; down: number } | null);
+  /** Админ: все уроки открыты, жизни не тратятся */
+  unlockAll: boolean;
 }
-export const HOOKS: GameHooks = { save: [], xp: [], leagueRows: null, leagueZones: null };
+export const HOOKS: GameHooks = { save: [], xp: [], leagueRows: null, leagueZones: null, unlockAll: false };
 export const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(_){}HOOKS.save.forEach(f=>{try{f(S)}catch(_){}})};
 export function ensureDaily(){if(S.daily.date!==TODAY())S.daily={date:TODAY(),xp:0,cmds:0,perfect:false,claimed:{}}}
 export function heartsTick(){if(S.hearts<MAXH){const n=Math.floor((Date.now()-S.heartsAt)/HEART_MS);if(n>0){S.hearts=Math.min(MAXH,S.hearts+n);S.heartsAt+=n*HEART_MS;save()}}}
