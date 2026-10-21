@@ -1,4 +1,5 @@
-import { toast } from '../game/state';
+import { S, save, toast } from '../game/state';
+import { renderHome } from '../game/ui';
 import { api } from './api';
 import { disablePush, enablePush, pushSupported } from './push';
 import { login, logout, register, reloadMe, session } from './sync';
@@ -25,6 +26,8 @@ function renderModal(mode: 'login' | 'register'): void {
       <h2>${escapeHtml(me.name)}</h2>
       <p class="muted">${escapeHtml(me.email)} · прогресс синхронизируется между устройствами</p>
       ${me.isAdmin ? '<p class="muted"><b>Режим админа:</b> все уроки открыты, жизни не тратятся.</p>' : ''}
+      <div class="field"><label for="goalSel">Дневная цель</label>
+        <select id="goalSel">${[[20,'Спокойно · 20 XP'],[30,'Нормально · 30 XP'],[50,'Серьёзно · 50 XP'],[80,'Как на дежурстве · 80 XP']].map(([v,t])=>`<option value="${v}" ${S.goal===v?'selected':''}>${t}</option>`).join('')}</select></div>
       <div class="field"><label for="remindHour">Когда утке напоминать</label>
         <select id="remindHour">${hours(me.remindHour)}</select>
         <small>Часовой пояс: ${escapeHtml(me.tz)}. В 23:00 будет ещё «последний шанс», если серия под угрозой.</small></div>
@@ -37,6 +40,13 @@ function renderModal(mode: 'login' | 'register'): void {
       </div>
       ${pushSupported() ? '' : '<small class="muted">Этот браузер не умеет push. На iPhone добавь сайт на экран «Домой» и открой оттуда.</small>'}
       <div class="row end"><button class="btn ghost" id="logout">Выйти</button><button class="btn" id="acctClose">Готово</button></div>`;
+    el('goalSel').onchange = (e) => {
+      S.goal = Number((e.target as HTMLSelectElement).value);
+      S.goalAt = Date.now();
+      save();
+      renderHome();
+      toast('Дневная цель сохранена');
+    };
     el('remindHour').onchange = async (e) => {
       await api.patch('/api/me', { remindHour: Number((e.target as HTMLSelectElement).value) });
       await reloadMe();
@@ -107,6 +117,17 @@ function close(): void {
 
 export function initAccount(): void {
   el('acctBtn').onclick = open;
+  // На новом устройстве можно войти сразу, не выбирая цель заново
+  const obLogin = document.getElementById('obLogin');
+  if (obLogin) {
+    obLogin.hidden = false;
+    obLogin.onclick = () => {
+      S.onboarded = true;
+      save();
+      el('onboard').hidden = true;
+      open();
+    };
+  }
   el('acctModal').onclick = (e) => {
     if (e.target === e.currentTarget) close();
   };

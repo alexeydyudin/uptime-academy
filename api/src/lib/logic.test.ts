@@ -29,6 +29,17 @@ describe('mergeProgress', () => {
   });
 });
 
+describe('goal merge', () => {
+  it('цель из онбординга нового устройства не перетирает серверную', () => {
+    expect(mergeProgress({ goal: 80, goalAt: 0 }, { goal: 30, goalAt: 0 }).goal).toBe(80);
+    expect(mergeProgress({ goal: 80 }, { goal: 30, goalAt: 0 }).goal).toBe(80);
+  });
+  it('явно изменённая цель побеждает', () => {
+    expect(mergeProgress({ goal: 80, goalAt: 0 }, { goal: 50, goalAt: 1_800_000_000_000 }).goal).toBe(50);
+    expect(mergeProgress({ goal: 50, goalAt: 2_000 }, { goal: 30, goalAt: 1_000 }).goal).toBe(50);
+  });
+});
+
 describe('league', () => {
   it('неделя начинается в понедельник', () => {
     expect(weekStart(new Date('2026-10-22T12:00:00Z'))).toBe('2026-10-19');

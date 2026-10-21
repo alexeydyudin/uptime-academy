@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import type { PoolClient } from 'pg';
 import { z } from 'zod';
 import { config } from '../config.js';
+import { isAdmin } from '../lib/admin.js';
 import { pool } from '../db.js';
 import { GROUP_SIZE, TIERS, addDays, weekStart, zones } from '../lib/league.js';
 
@@ -36,6 +37,11 @@ async function joinWeek(db: PoolClient, uid: number, week: string): Promise<void
 
 async function leagueView(uid: number) {
   const week = weekStart();
+  if (await isAdmin(uid)) {
+    // админы проходят всё без ограничений и не должны мешать честному рейтингу
+    await pool.query('delete from league_weeks where week = $1 and user_id = $2', [week, uid]);
+    return { week, tier: 0, tierName: TIERS[0], endsAt: addDays(week, 7) + 'T00:00:00Z', joined: false, excluded: true, rows: [], zones: zones(0, 0) };
+  }
   const me = await pool.query<{ tier: number; grp: number }>(
     'select tier, grp from league_weeks where week = $1 and user_id = $2',
     [week, uid],
@@ -79,6 +85,10 @@ export async function leagueRoutes(app: FastifyInstance) {
       return reply.code(429).send({ error: 'Дневной лимит опыта. Утка подозревает накрутку.' });
 
     const week = weekStart();
+    if (await isAdmin(uid)) {
+      await pool.query('insert into xp_events (user_id, amount) values ($1, $2)', [uid, body.data.amount]);
+      return leagueView(uid);
+    }
     const db = await pool.connect();
     try {
       await db.query('begin');

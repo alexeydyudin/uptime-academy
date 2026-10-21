@@ -50,6 +50,7 @@ export interface League {
   tierName: string;
   endsAt: string;
   joined: boolean;
+  excluded?: boolean;
   zones: { up: number; down: number };
   rows: LeagueRow[];
 }

@@ -22,7 +22,7 @@ export function renderHome(){
   ensureWeek();const tier=S.league.tier,rows=(HOOKS.leagueRows&&HOOKS.leagueRows())||standings(S.league.week,tier,S.league.xp,weekFrac());const left=Math.max(1,7-Math.floor(weekFrac()*7));
   const z=(HOOKS.leagueZones&&HOOKS.leagueZones())||{up:tier<TIERS.length-1?3:0,down:tier>0?3:0};
   const ranked=rows.map((x,i)=>Object.assign({rank:i+1},x)),vis=ranked.slice(0,10);if(!vis.some(x=>x.me)){const mine=ranked.find(x=>x.me);if(mine)vis.push(mine)}
-  $('#leagueCard').innerHTML=`<h3>Лига «${TIERS[tier]}»</h3><div class="lgsub">${z.up?`Топ-${z.up} поднимаются`:tier>=TIERS.length-1?'Высшая лига':'Пока в группе мало игроков'}${z.down?`, последние ${z.down} вылетают`:''} · ${left} ${plural(left,'день','дня','дней')} до конца</div><ol class="lg">${vis.map(x=>`<li class="${x.me?'me':''} ${x.rank<=z.up?'up':''} ${x.rank>ranked.length-z.down?'down':''}"><b>${x.rank}</b><span>${esc(x.name)}</span><em>${x.xp} XP</em></li>`).join('')}</ol>`;
+  const lnote=HOOKS.leagueNote&&HOOKS.leagueNote();if(lnote)$('#leagueCard').innerHTML=`<h3>Лига</h3><div class="lgsub">${esc(lnote)}</div>`;else $('#leagueCard').innerHTML=`<h3>Лига «${TIERS[tier]}»</h3><div class="lgsub">${z.up?`Топ-${z.up} поднимаются`:tier>=TIERS.length-1?'Высшая лига':'Пока в группе мало игроков'}${z.down?`, последние ${z.down} вылетают`:''} · ${left} ${plural(left,'день','дня','дней')} до конца</div><ol class="lg">${vis.map(x=>`<li class="${x.me?'me':''} ${x.rank<=z.up?'up':''} ${x.rank>ranked.length-z.down?'down':''}"><b>${x.rank}</b><span>${esc(x.name)}</span><em>${x.xp} XP</em></li>`).join('')}</ol>`;
   // duck mood
   let mood='ok',say;const nl=nextLesson();const gap=S.lastDay?daysBetween(S.lastDay,TODAY()):0;
   if(S.hearts===0){mood='worry';const m=Math.ceil((HEART_MS-(Date.now()-S.heartsAt))/60000);say=`Жизни кончились, как error budget в Чёрную пятницу. Новая через ${m} мин. Можно пока повторить пройденный урок.`}
@@ -36,7 +36,8 @@ export function renderHome(){
   else say=nl?`Сегодня по плану: «${LESSONS[nl].title}». До цели ${Math.max(0,S.goal-S.daily.xp)} XP.`:'Всё пройдено. Повтори любой урок, чтобы сохранить серию.';
   $('#homeDuck').innerHTML=duckSVG(mood);$('#duckSay').textContent=say;
   // path
-  const P=$('#path');P.innerHTML='';const offs=[0,56,84,56,0,-56,-84,-56];let k=0;
+  const P=$('#path');P.innerHTML='';
+  if(nl){const c=document.createElement('div');c.className='cta';c.innerHTML=`${duckSVG(mood)}<p></p><button class="btn">Продолжить: ${esc(LESSONS[nl].title)}</button>`;c.querySelector('p').textContent=say;c.querySelector('.btn').onclick=()=>startLesson(nl);P.append(c)}const offs=[0,56,84,56,0,-56,-84,-56];let k=0;
   for(const u of UNITS){
     const doneN=u.lessons.filter(l=>S.done[l]).length;const uLocked=u.soon||!unlocked(u.lessons[0]);
     const sec=document.createElement('section');sec.className='unit'+(uLocked?' locked':'');sec.style.setProperty('--uc',u.c);
@@ -67,7 +68,7 @@ export function startReview(){const items=S.review.slice(0,8);if(!items.length)r
   show('lesson');renderStep()}
 export function setFoot(state,html,btnText,btnCls,hint){
   const f=$('#lFoot');f.className='lfoot'+(state?' '+state:'');$('#lMsg').innerHTML=html||'';
-  const b=$('#lMain');b.textContent=btnText;b.className='btn'+(btnCls?' '+btnCls:'');b.disabled=false;$('#lHint').hidden=!hint;
+  const b=$('#lMain');b.textContent=btnText;b.className='btn'+(btnCls?' '+btnCls:'');b.disabled=false;$('#lHint').hidden=!hint;$('#lHint').disabled=false;$('#lHint').textContent='Подсказка';
 }
 export function renderStep(){
   const s=R.steps[R.i],B=$('#lBody');R.checked=false;R.cmds=[];R.keyH=null;
@@ -102,8 +103,10 @@ export function renderStep(){
       else if(e.key==='ArrowDown'){if(R.hi<R.W.hist.length-1){R.hi++;I.value=R.W.hist[R.hi]}else{R.hi=R.W.hist.length;I.value=''}e.preventDefault()}
       else if(e.key==='Tab'){e.preventDefault();const c=complete(R.W,I.value);if(c.val!=null)I.value=c.val;else if(c.list)line(O,c.list,'d')}};
     setFoot('','<span style="color:var(--muted)">Выполни задание в терминале, проверка автоматическая.</span>','Пропустить','ghost',true);
-    $('#lMain').onclick=()=>{R.checked=true;R.mistakes++;R.combo=0;setFoot('bad',`${duckSVG('worry','duckmini')}<div><b>Пропущено</b><span>Решение: <code>${esc(s.hint)}</code></span></div>`,'Дальше','bad');$('#lMain').onclick=next};
-    $('#lHint').onclick=()=>{line(O,'Подсказка утки: '+s.hint,'d');R.hist.push({text:'Подсказка утки: '+s.hint,cls:'d'});R.firstTry=false};
+    const hints=s.hints||[s.hint],hb=$('#lHint');
+    const label=()=>{const n=s.hintN||0;hb.disabled=n>=hints.length;hb.textContent=n>=hints.length?'Подсказок больше нет':n===hints.length-1?'Показать решение':`Подсказка ${n+1}/${hints.length}`};label();
+    $('#lMain').onclick=()=>{R.checked=true;R.mistakes++;R.combo=0;setFoot('bad',`${duckSVG('worry','duckmini')}<div><b>Пропущено</b><span>Решение: <code>${esc(hints[hints.length-1])}</code></span></div>`,'Дальше','bad');$('#lMain').onclick=next};
+    hb.onclick=()=>{const n=s.hintN||0;if(n>=hints.length)return;s.hintN=n+1;R.hints=(R.hints||0)+1;R.firstTry=false;const t=(n===hints.length-1?'Решение: ':`Подсказка ${n+1}: `)+hints[n];line(O,t,'d');R.hist.push({text:t,cls:'d'});label()};
     setTimeout(()=>I.focus({preventScroll:true}),50);
   }
   if(s.t==='edit'){
@@ -112,7 +115,7 @@ export function renderStep(){
     ta.onkeydown=e=>{if(e.key==='Tab'){e.preventDefault();ta.setRangeText('  ',ta.selectionStart,ta.selectionEnd,'end')}};ta.oninput=()=>s.code=ta.value;
     const ts=document.createElement('div');ts.className='tests';ts.innerHTML=s.checks.map(c=>`<div><span>○</span><small>${esc(c.name)}</small></div>`).join('');B.append(fn,ta,ts);
     setFoot('','<span style="color:var(--muted)">Отредактируй файл и нажми «Проверить».</span>','Проверить','',!!s.hint);
-    $('#lHint').onclick=()=>{if(B.querySelector('.hintp'))return;const h=document.createElement('div');h.className='hintp';h.innerHTML='Подсказка утки: '+md(s.hint).replace(/\n/g,'<br>');B.insertBefore(h,fn);R.firstTry=false};
+    $('#lHint').onclick=()=>{if(B.querySelector('.hintp'))return;const h=document.createElement('div');h.className='hintp';h.innerHTML='Подсказка утки: '+md(s.hint).replace(/\n/g,'<br>');B.insertBefore(h,fn);R.firstTry=false;R.hints=(R.hints||0)+1};
     $('#lMain').onclick=()=>{const txt=ta.value;let all=true;ts.innerHTML='';
       for(const c of s.checks){let ok=false;try{ok=c.test(txt)}catch(_){}all=all&&ok;const d=document.createElement('div');d.innerHTML=`<span class="${ok?'p':'f'}">${ok?'✓':'✕'}</span><small></small>`;d.querySelector('small').textContent=c.name;ts.append(d)}
       if(all){if(s.path&&R.W){R.W.files[s.path]=txt;if(s.onSave)s.onSave(R.W)}R.checked=true;good(s.done||'Конфиг в порядке.')}
@@ -149,7 +152,7 @@ export function outOfHearts(){show('result');const m=Math.ceil((HEART_MS-(Date.n
 export function finishLesson(extra){
   const L=R?R.L:LESSONS.l13;const id=R?R.id:'l13';const replay=R?R.replay:!!S.done.l13;const isReview=!!(R&&R.review);
   const perfect=R?R.mistakes===0&&R.firstTry:true;const before=rankOf(S.xp);ensureDaily();const goalBefore=S.daily.xp>=S.goal;const streakBefore=streakNow();const wasToday=S.lastDay===TODAY();
-  let xp=isReview?L.xp:replay?Math.ceil(L.xp/2):L.xp;if(perfect)xp+=5;if(R&&R.bestCombo>=5)xp+=5;
+  let xp=isReview?L.xp:replay?Math.ceil(L.xp/2):L.xp;if(perfect)xp+=5;if(R&&R.bestCombo>=5)xp+=5;const hintPen=R?Math.min(Math.floor(xp/2),(R.hints||0)*2):0;xp-=hintPen;
   if(!isReview)S.done[id]=true;if(perfect){S.daily.perfect=true}addXP(xp);
   const acc=R?Math.round((R.total/(R.total+R.mistakes))*100):100;const secs=R?Math.round((Date.now()-R.t0)/1000):extra.secs;
   show('result');const B=$('#resBody');B.className='result';
@@ -159,7 +162,7 @@ export function finishLesson(extra){
   if(!goalBefore&&S.daily.xp>=S.goal)banners+=`<div class="banner"><svg><use href="#i-chest"/></svg><div><b>Дневная цель выполнена</b>${S.daily.xp} из ${S.goal} XP. Можно и больше.</div></div>`;
   if(rankOf(S.xp)>before)banners+=`<div class="banner"><svg><use href="#i-bolt"/></svg><div><b>Новый ранг: ${RANKS[rankOf(S.xp)][1]}</b>Можно смело менять строчку в резюме. Почти.</div></div>`;
   const title=isReview?'Ошибки разобраны':L.boss?'Смена закрыта':perfect?'Без единой ошибки':'Урок пройден';
-  B.innerHTML=`${duckSVG('happy')}<h1>${title}</h1><p style="margin:0;color:var(--muted)">${esc(L.title)}${replay?' · повтор, половина опыта':''}${perfect?' · +5 XP за чистое прохождение':''}</p>${tiles}${banners}<button class="btn" id="resGo">Продолжить</button>`;
+  B.innerHTML=`${duckSVG('happy')}<h1>${title}</h1><p style="margin:0;color:var(--muted)">${esc(L.title)}${replay?' · повтор, половина опыта':''}${perfect?' · +5 XP за чистое прохождение':''}${hintPen?` · −${hintPen} XP за подсказки`:''}</p>${tiles}${banners}<button class="btn" id="resGo">Продолжить</button>`;
   B.querySelector('.duck').style.width='140px';$('#resGo').onclick=()=>{R=null;renderHome();show('home')};$('#resGo').focus();
 }
 export function finishBoss(x){R=null;finishLesson(x)}

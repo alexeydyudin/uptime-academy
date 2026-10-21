@@ -21,7 +21,8 @@ export async function buildApp() {
   await app.register(authPlugin);
   await app.register(
     async (api) => {
-      api.get('/health', async () => {
+      // Render дёргает health каждые 5 секунд: не засоряем лог
+      api.get('/health', { logLevel: 'warn' }, async () => {
         await pool.query('select 1');
         return { ok: true };
       });

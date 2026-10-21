@@ -5,7 +5,7 @@ import { show, renderHome } from './ui';
 /* onboarding & boot */
 export let obGoal=30;
 document.querySelectorAll('#goals button').forEach(b=>b.onclick=()=>{obGoal=+b.dataset.g;document.querySelectorAll('#goals button').forEach(x=>x.setAttribute('aria-pressed',x===b))});
-$('#obGo').onclick=()=>{S.goal=obGoal;S.onboarded=true;save();$('#onboard').hidden=true;renderHome()};
+$('#obGo').onclick=()=>{S.goal=obGoal;S.goalAt=0;S.onboarded=true;save();$('#onboard').hidden=true;renderHome()};
 $('#obDuck').innerHTML=duckSVG('happy');
 ensureDaily();heartsTick();renderHome();show('home');
 if(!S.onboarded)$('#onboard').hidden=false;

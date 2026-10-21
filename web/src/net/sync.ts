@@ -68,6 +68,7 @@ function attachHooks(): void {
     return league.joined ? league.rows : [{ name: me?.name ?? 'ты', xp: 0, me: true }];
   };
   HOOKS.leagueZones = () => (league?.joined ? league.zones : null);
+  HOOKS.leagueNote = () => (league?.excluded ? 'Админы не участвуют в лиге, чтобы не мешать честному рейтингу.' : null);
   HOOKS.unlockAll = Boolean(me?.isAdmin);
 }
 
@@ -76,6 +77,7 @@ function detachHooks(): void {
   HOOKS.xp.length = 0;
   HOOKS.leagueRows = null;
   HOOKS.leagueZones = null;
+  HOOKS.leagueNote = null;
   HOOKS.unlockAll = false;
   clearInterval(leagueTimer);
   league = null;

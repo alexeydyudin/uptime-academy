@@ -21,6 +21,8 @@ export interface Progress {
   hearts?: number;
   heartsAt?: number;
   goal?: number;
+  /** Когда цель выбрана явно (мс). 0 — выбрана в онбординге до входа, такая цель не перетирает серверную. */
+  goalAt?: number;
   onboarded?: boolean;
   code?: string | null;
   review?: { l: string; i: number }[];
@@ -39,6 +41,16 @@ export function mergeProgress(server: Progress | null, client: Progress): Progre
   out.days = [...new Set([...(server.days ?? []), ...(client.days ?? [])])].sort().slice(-60);
   out.onboarded = Boolean(server.onboarded || client.onboarded);
   out.code = client.code ?? server.code ?? null;
+
+  const gs = server.goalAt ?? 0;
+  const gc = client.goalAt ?? 0;
+  if (gc > gs) {
+    out.goal = client.goal;
+    out.goalAt = gc;
+  } else {
+    out.goal = server.goal ?? client.goal;
+    out.goalAt = gs;
+  }
 
   const ls = server.lastDay ?? '';
   const lc = client.lastDay ?? '';

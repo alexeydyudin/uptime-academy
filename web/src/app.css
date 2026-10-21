@@ -19,3 +19,6 @@ img{max-width:100%}
 .err{color:var(--bad);margin:0;font-size:14px}
 .link{background:none;border:0;padding:0;color:var(--u3);font-weight:700;cursor:pointer;text-decoration:underline}
 .switch{text-align:center}
+
+@media (max-width:480px){.acct{padding:5px 10px;font-size:13px}.acct.avatar{width:32px;height:32px}}
+#obLogin{align-self:center}
