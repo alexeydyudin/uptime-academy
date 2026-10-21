@@ -9,13 +9,17 @@ import { closeWeek, runReminders } from '../src/jobs/index.js';
 import { weekStart } from '../src/lib/league.js';
 import { initPush } from '../src/lib/push.js';
 
+if (process.env.NODE_ENV !== 'test') throw new Error('smoke.ts запускается только с NODE_ENV=test: он чистит тестовые данные');
 await migrate();
+// убираем следы прошлых прогонов: тестовых пользователей и отметку о закрытой неделе
+await pool.query("delete from users where email like '%@test.dev'");
+await pool.query("delete from kv where key = $1", [`closed:${weekStart()}`]);
 await initPush();
 const app = await buildApp();
 
 const sid = Date.now().toString(36);
 async function signup(name: string) {
-  const r = await app.inject({ method: 'POST', url: '/api/auth/register', payload: { email: `${name}-${sid}@test.dev`, password: 'hunter2hunter2', name } });
+  const r = await app.inject({ method: 'POST', url: '/api/auth/register', payload: { email: `${name}-${sid}@test.dev`, password: 'hunter2hunter2', name: `${name}_${sid}` } });
   assert.equal(r.statusCode, 200, r.body);
   const cookie = String(r.headers['set-cookie']).split(';')[0];
   return (method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE', url: string, payload?: unknown) =>
@@ -46,7 +50,8 @@ await yana('POST', '/api/xp', { amount: 55 });
 lg = (await alex('GET', '/api/league')).json();
 assert.equal(lg.joined, true);
 assert.equal(lg.tierName, 'Бронза');
-assert.deepEqual(lg.rows.map((r: { name: string }) => r.name).slice(0, 2), ['yaml_yana', 'alexey']);
+const mine = lg.rows.map((r: { name: string }) => r.name).filter((n: string) => n.endsWith(sid));
+assert.deepEqual(mine, [`yaml_yana_${sid}`, `alexey_${sid}`]);
 assert.equal((await alex('POST', '/api/xp', { amount: 500 })).statusCode, 400);
 
 // настройки и push
@@ -62,7 +67,7 @@ assert.equal(me.remindHour, 21);
 // джобы: не падают на реальных данных
 await runReminders(new Date());
 await closeWeek(weekStart());
-const tiers = await pool.query('select u.name, t.tier from user_tier t join users u on u.id = t.user_id where u.email like $1 order by u.name', [`%-${sid}@test.dev`]);
+const tiers = await pool.query('select split_part(u.name, \'_\' || $2, 1) as name, t.tier from user_tier t join users u on u.id = t.user_id where u.email like $1 order by u.name', [`%-${sid}@test.dev`, sid]);
 console.log('tiers after close:', tiers.rows);
 assert.equal(tiers.rows.find((r) => r.name === 'yaml_yana')?.tier, 1);
 

@@ -39,8 +39,8 @@ export async function buildApp() {
       root: path.resolve(config.staticDir),
       wildcard: false,
       setHeaders(res, file) {
-        if (/(sw\.js|\.webmanifest|index\.html)$/.test(file)) res.setHeader('Cache-Control', 'no-cache');
-        else if (file.includes(`${path.sep}assets${path.sep}`)) res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+        if (/(sw\.js|\.webmanifest|index\.html)$/.test(file)) res.header('Cache-Control', 'no-cache');
+        else if (file.includes(`${path.sep}assets${path.sep}`)) res.header('Cache-Control', 'public, max-age=31536000, immutable');
       },
     });
     // SPA: всё, что не API и не файл, отдаёт index.html
