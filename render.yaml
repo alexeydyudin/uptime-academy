@@ -1,0 +1,30 @@
+# Render Blueprint: один бесплатный веб-сервис отдаёт и фронт, и API.
+# База — внешняя (Neon), её строку подключения вводишь при создании.
+services:
+  - type: web
+    name: uptime-academy
+    runtime: node
+    plan: free
+    region: frankfurt
+    buildCommand: >-
+      npm ci --include=dev --prefix web && npm run build --prefix web &&
+      npm ci --include=dev --prefix api && npm run build --prefix api
+    startCommand: cd api && node dist/index.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CRON_SECRET
+        generateValue: true
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: STATIC_DIR
+        value: ../web/dist
+      - key: VAPID_SUBJECT
+        value: mailto:admin@example.com

@@ -1,0 +1,1031 @@
+<title>Uptime Academy</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&family=Onest:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: путь обучения слева, «тумба дежурного» (утка, цель, квесты) справа; урок — полноэкранный шаг за шагом с нижней панелью проверки. */
+:root{
+  --bg:#eef2f7; --panel:#ffffff; --panel2:#f3f6fa; --line:#d8dfea; --ink:#162034; --muted:#5b6880;
+  --duck:#f7c234; --duck-d:#cf9a10; --duck-ink:#2b1d00;
+  --ok:#21a058; --ok-d:#177a42; --ok-bg:#dcf5e6; --bad:#e2474c; --bad-d:#b5333a; --bad-bg:#fde3e4;
+  --locked:#c8d0dc; --locked-d:#a9b3c3; --flame:#ff7a1a; --heart:#ef4b5c;
+  --term:#0f1622; --term-ink:#d6deea; --term-dim:#7d8aa3; --term-acc:#f7c234;
+  --u1:#119c93; --u2:#de6f26; --u3:#2b7fd8; --u4:#7656dc; --u5:#cf3f78; --u6:#d63c42;
+  --f-display:"Unbounded","Segoe UI",system-ui,sans-serif;
+  --f-body:"Onest","Segoe UI",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0d1320; --panel:#151d2d; --panel2:#1b2538; --line:#28344d; --ink:#e4e9f2; --muted:#93a0b8;
+  --ok-bg:#12321f; --bad-bg:#3a1719; --locked:#323d55; --locked-d:#252e42; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d1320; --panel:#151d2d; --panel2:#1b2538; --line:#28344d; --ink:#e4e9f2; --muted:#93a0b8;
+  --ok-bg:#12321f; --bad-bg:#3a1719; --locked:#323d55; --locked-d:#252e42; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 32px}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--duck);outline-offset:2px}
+code{font-family:var(--f-mono);font-size:.88em;background:var(--panel2);border:1px solid var(--line);padding:1px 6px;border-radius:5px;white-space:pre-wrap;overflow-wrap:anywhere}
+h1,h2,h3{text-wrap:balance}
+.wrap{max-width:1040px;margin:0 auto}
+
+/* buttons */
+.btn{border:0;border-radius:14px;padding:12px 22px;font-weight:700;cursor:pointer;letter-spacing:.02em;text-transform:uppercase;font-size:14px;
+  background:var(--duck);color:var(--duck-ink);box-shadow:0 4px 0 var(--duck-d);transition:transform .05s}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--duck-d)}
+.btn.ghost{background:var(--panel);color:var(--muted);box-shadow:0 3px 0 var(--line);border:2px solid var(--line)}
+.btn.ok{background:var(--ok);color:#fff;box-shadow:0 4px 0 var(--ok-d)}
+.btn.bad{background:var(--bad);color:#fff;box-shadow:0 4px 0 var(--bad-d)}
+.btn[disabled]{background:var(--locked);color:var(--muted);box-shadow:0 4px 0 var(--locked-d);cursor:not-allowed}
+
+/* top bar */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:2px solid var(--line);margin-bottom:20px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.top .wrap{display:flex;align-items:center;gap:18px;padding-block:12px}
+.logo{font-family:var(--f-display);font-weight:800;font-size:19px;letter-spacing:-.01em;margin-right:auto}
+.logo span{color:var(--duck-d)}
+.chip{display:flex;align-items:center;gap:6px;font-weight:700;font-variant-numeric:tabular-nums}
+.chip svg{width:22px;height:22px}
+.chip.dim{color:var(--locked-d)}
+.chip.dim svg{filter:grayscale(1);opacity:.6}
+@media (max-width:480px){.logo{font-size:15px}.top .wrap{gap:12px}}
+
+/* home layout */
+.home{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:28px;align-items:start}
+@media (max-width:860px){.home{grid-template-columns:minmax(0,1fr)}.side{order:-1}}
+.side{display:flex;flex-direction:column;gap:16px;position:sticky;top:80px}
+@media (max-width:860px){.side{position:static}}
+.card{background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:16px}
+.card h3{margin:0 0 10px;font-family:var(--f-display);font-size:14px;font-weight:700;letter-spacing:.01em}
+
+.duckcard{display:grid;grid-template-columns:96px minmax(0,1fr);gap:12px;align-items:center}
+.bubble{position:relative;background:var(--panel2);border:2px solid var(--line);border-radius:14px;padding:10px 12px;font-size:14px;font-weight:500}
+.bubble::before{content:"";position:absolute;left:-9px;top:22px;width:14px;height:14px;background:var(--panel2);border-left:2px solid var(--line);border-bottom:2px solid var(--line);transform:rotate(45deg)}
+.duck{width:96px;height:auto;display:block}
+.rank{display:flex;justify-content:space-between;align-items:baseline;margin-top:12px;font-size:13px;color:var(--muted)}
+.rank b{color:var(--ink);font-family:var(--f-display);font-size:13px}
+.bar{height:12px;background:var(--panel2);border:2px solid var(--line);border-radius:999px;overflow:hidden;margin-top:6px}
+.bar>div{height:100%;background:var(--duck);border-radius:999px;transition:width .4s}
+.bar.ok>div{background:var(--ok)}
+
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center;font-size:11px;color:var(--muted)}
+.week i{display:block;width:26px;height:26px;margin:4px auto 0;border-radius:50%;background:var(--panel2);border:2px solid var(--line)}
+.week i.on{background:var(--flame);border-color:var(--flame)}
+.week i.today{border-color:var(--duck-d)}
+.goalrow{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-top:12px}
+.goalrow b{color:var(--ink)}
+.quests{display:flex;flex-direction:column;gap:12px}
+.q{font-size:13.5px}
+.q .qh{display:flex;justify-content:space-between;gap:8px;font-weight:600}
+.q .qh span{color:var(--muted);font-weight:500;font-variant-numeric:tabular-nums}
+.q.done .qh{color:var(--ok)}
+
+/* path */
+.unit{margin-bottom:30px}
+.uhead{border-radius:16px;padding:14px 18px;color:#fff;display:flex;justify-content:space-between;align-items:center;gap:12px;box-shadow:0 4px 0 rgba(0,0,0,.18)}
+.uhead small{display:block;opacity:.85;font-size:12px;letter-spacing:.06em;text-transform:uppercase;font-weight:600}
+.uhead h2{margin:2px 0 0;font-family:var(--f-display);font-size:18px;font-weight:700}
+.uhead p{margin:4px 0 0;font-size:13px;opacity:.9}
+.uhead .cnt{font-family:var(--f-mono);font-size:13px;opacity:.9;white-space:nowrap}
+.unit.locked .uhead{background:var(--locked)!important;color:var(--muted);box-shadow:0 4px 0 var(--locked-d)}
+.nodes{display:flex;flex-direction:column;align-items:center;gap:34px;padding-block:44px 4px}
+.node{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px}
+.nbtn{width:72px;height:68px;border-radius:50%;border:0;cursor:pointer;display:grid;place-items:center;background:var(--uc);box-shadow:0 7px 0 rgba(0,0,0,.25);color:#fff;transition:transform .05s}
+.nbtn:active{transform:translateY(4px);box-shadow:0 3px 0 rgba(0,0,0,.25)}
+.nbtn svg{width:30px;height:30px}
+.node.boss .nbtn{width:88px;height:82px;border-radius:24px}
+.node.locked .nbtn{background:var(--locked);color:var(--locked-d);box-shadow:0 7px 0 var(--locked-d);cursor:not-allowed}
+.node.done .nbtn{background:var(--uc)}
+.node .nlabel{font-size:13px;font-weight:600;color:var(--muted);max-width:180px;text-align:center}
+.node.cur .nlabel{color:var(--ink)}
+.node.cur .nbtn{outline:6px solid color-mix(in srgb,var(--uc) 30%,transparent);outline-offset:4px}
+.start{position:absolute;top:-38px;background:var(--panel);border:2px solid var(--line);color:var(--uc);font-weight:800;text-transform:uppercase;font-size:12px;letter-spacing:.06em;padding:5px 12px;border-radius:10px;white-space:nowrap;animation:bob 1.6s ease-in-out infinite}
+.start::after{content:"";position:absolute;left:50%;bottom:-7px;width:10px;height:10px;background:var(--panel);border-right:2px solid var(--line);border-bottom:2px solid var(--line);transform:translateX(-50%) rotate(45deg)}
+@keyframes bob{50%{transform:translateY(-4px)}}
+@media (prefers-reduced-motion:reduce){.start{animation:none}}
+
+/* lesson */
+.lesson{max-width:760px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+.lbar{display:flex;align-items:center;gap:14px;padding-block:18px}
+.x{background:none;border:0;cursor:pointer;color:var(--muted);padding:4px;display:grid;place-items:center}
+.x svg{width:26px;height:26px}
+.lprog{flex:1;height:16px;background:var(--panel2);border:2px solid var(--line);border-radius:999px;overflow:hidden}
+.lprog>div{height:100%;background:var(--ok);border-radius:999px;transition:width .35s}
+.combo{font-family:var(--f-display);font-size:12px;color:var(--flame);font-weight:700;min-width:46px;text-align:right}
+.lbody{flex:1;display:flex;flex-direction:column;gap:16px;padding-block:8px 150px}
+.kind{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.lbody h2{margin:0;font-family:var(--f-display);font-size:22px;font-weight:700;line-height:1.3}
+.lbody p{margin:0;max-width:62ch}
+.learn{display:grid;grid-template-columns:110px minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:520px){.learn{grid-template-columns:72px minmax(0,1fr)}}
+.opts{display:grid;gap:10px}
+.opt{text-align:left;background:var(--panel);border:2px solid var(--line);border-bottom-width:4px;border-radius:14px;padding:13px 16px;cursor:pointer;font-weight:500;display:flex;gap:12px;align-items:center}
+.opt kbd{font-family:var(--f-mono);font-size:12px;color:var(--muted);border:2px solid var(--line);border-radius:7px;min-width:26px;height:26px;display:grid;place-items:center;flex:none}
+.opt[aria-pressed="true"]{border-color:var(--u3);background:color-mix(in srgb,var(--u3) 10%,var(--panel))}
+.opt.right{border-color:var(--ok);background:var(--ok-bg)}
+.opt.wrong{border-color:var(--bad);background:var(--bad-bg)}
+
+.term{background:var(--term);color:var(--term-ink);border-radius:14px;border:2px solid #1f2a3d;display:flex;flex-direction:column;overflow:hidden}
+.tout{height:290px;overflow:auto;padding:12px 14px;font-family:var(--f-mono);font-size:12.5px;line-height:1.55;white-space:pre}
+.tout .c{color:var(--term-acc)} .tout .e{color:#ff7b7f} .tout .d{color:var(--term-dim)} .tout .g{color:#5fd68e}
+.tin{display:flex;gap:8px;align-items:center;border-top:1px solid #1f2a3d;padding:10px 14px;font-family:var(--f-mono);font-size:13px}
+.tin b{color:var(--term-acc);font-weight:600;white-space:nowrap}
+.tin input{flex:1;min-width:0;background:transparent;border:0;outline:0;color:var(--term-ink);font:inherit}
+textarea.code{width:100%;height:260px;resize:vertical;background:var(--term);color:var(--term-ink);border:2px solid #1f2a3d;border-radius:14px;padding:12px 14px;font-family:var(--f-mono);font-size:13px;line-height:1.55;tab-size:2;white-space:pre}
+.tests{display:flex;flex-direction:column;gap:6px;font-size:13.5px}
+.tests div{display:flex;gap:8px;align-items:baseline}
+.tests .p{color:var(--ok);font-weight:700} .tests .f{color:var(--bad);font-weight:700}
+.tests small{color:var(--muted)}
+
+.lfoot{position:fixed;left:0;right:0;bottom:0;border-top:2px solid var(--line);background:var(--bg);z-index:6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px calc(16px + env(safe-area-inset-bottom,0px))}
+.lfoot .in{max-width:760px;margin:0 auto;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.lfoot .msg{flex:1;min-width:200px;display:flex;gap:12px;align-items:center}
+.lfoot .msg svg.duckmini{width:52px;flex:none}
+.lfoot .msg b{display:block;font-family:var(--f-display);font-size:17px}
+.lfoot .msg span{font-size:14px}
+.lfoot.ok{background:var(--ok-bg);border-color:transparent}.lfoot.ok .msg b{color:var(--ok)}
+.lfoot.bad{background:var(--bad-bg);border-color:transparent}.lfoot.bad .msg b{color:var(--bad)}
+
+/* result */
+.result{max-width:560px;margin:0 auto;text-align:center;padding-block:40px;display:flex;flex-direction:column;gap:18px;align-items:center}
+.result h1{font-family:var(--f-display);font-size:28px;margin:0;color:var(--duck-d)}
+.result.fail h1{color:var(--bad)}
+.tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;width:100%}
+.tile{border:2px solid var(--tc,var(--duck));border-radius:14px;overflow:hidden}
+.tile small{display:block;background:var(--tc,var(--duck));color:#fff;font-weight:700;font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:4px}
+.tile b{display:block;padding:10px;font-family:var(--f-display);font-size:20px;font-variant-numeric:tabular-nums}
+.banner{width:100%;border:2px solid var(--line);background:var(--panel);border-radius:14px;padding:12px 14px;display:flex;gap:12px;align-items:center;text-align:left;font-size:14px}
+.banner svg{width:32px;height:32px;flex:none}
+.banner b{display:block}
+
+/* boss */
+.boss{max-width:1180px;margin:0 auto;padding-block:14px}
+.bhead{display:flex;flex-wrap:wrap;align-items:center;gap:12px 18px;margin-bottom:12px}
+.bhead h2{margin:0;font-family:var(--f-display);font-size:18px}
+.bclock{font-family:var(--f-mono);font-size:15px;margin-left:auto;font-variant-numeric:tabular-nums}
+.speed{display:flex;border:2px solid var(--line);border-radius:10px;overflow:hidden}
+.speed button{background:var(--panel);border:0;padding:6px 11px;font-family:var(--f-mono);font-size:12px;cursor:pointer;color:var(--muted)}
+.speed button+button{border-left:2px solid var(--line)}
+.speed button[aria-pressed="true"]{background:var(--duck);color:var(--duck-ink);font-weight:700}
+.goalbar{width:100%;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted)}
+.goalbar .bar{flex:1;margin:0}
+.pager{width:100%;display:flex;gap:10px;align-items:center;background:var(--bad-bg);border:2px solid var(--bad);border-radius:10px;padding:7px 12px;font-family:var(--f-mono);font-size:12.5px}
+.pager i{width:9px;height:9px;border-radius:50%;background:var(--bad);animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:.2}}
+@media (prefers-reduced-motion:reduce){.pager i{animation:none}}
+.bgrid{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:14px;align-items:start}
+@media (max-width:900px){.bgrid{grid-template-columns:minmax(0,1fr)}}
+.bcol{display:flex;flex-direction:column;gap:12px;min-width:0}
+.stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+@media (max-width:560px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.stat{background:var(--panel);border:2px solid var(--line);border-radius:12px;padding:8px 10px;min-width:0}
+.stat label{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.stat output{display:block;font-family:var(--f-mono);font-size:17px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.svcs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (max-width:560px){.svcs{grid-template-columns:minmax(0,1fr)}}
+.svc{background:var(--panel);border:2px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:7px;min-width:0}
+.svc.hot{border-color:var(--bad)}
+.svc header{display:flex;gap:8px;align-items:baseline}
+.svc h4{margin:0;font-family:var(--f-display);font-size:14px}
+.svc header small{color:var(--muted);font-size:12px}
+.svc header span{margin-left:auto;font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.util{display:flex;align-items:center;gap:8px;font-family:var(--f-mono);font-size:11.5px;color:var(--muted)}
+.util .ub{flex:1;height:7px;background:var(--panel2);border-radius:4px;overflow:hidden}
+.util .ub div{height:100%}
+.pods{display:flex;flex-wrap:wrap;gap:5px}
+.pod{width:24px;height:24px;border-radius:5px;border:2px solid;padding:0;cursor:pointer;position:relative;background:var(--panel2);overflow:hidden}
+.pod span{position:absolute;left:0;right:0;bottom:0;background:currentColor;opacity:.75}
+.pod.Running{color:var(--ok)} .pod.Creating{color:var(--u3);border-style:dashed} .pod.CrashLoopBackOff{color:var(--bad)} .pod.Terminating{color:var(--locked-d)}
+.bpanel{background:var(--panel);border:2px solid var(--line);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.btabs{display:flex;gap:6px}
+.btabs button{flex:1;background:var(--panel2);border:2px solid var(--line);border-radius:10px;padding:7px;cursor:pointer;font-weight:700;font-size:13px;color:var(--muted)}
+.btabs button[aria-selected="true"]{border-color:var(--duck-d);color:var(--ink);background:var(--panel)}
+.events{background:var(--panel);border:2px solid var(--line);border-radius:12px;padding:10px 12px;max-height:180px;overflow:auto;font-family:var(--f-mono);font-size:12px}
+.ev{display:flex;gap:10px}.ev time{color:var(--muted);flex:none}
+.ev.bad span{color:var(--bad)} .ev.ok span{color:var(--ok)} .ev.warn span{color:var(--flame)}
+
+.fname{font-family:var(--f-mono);font-size:12px;color:var(--muted);margin-bottom:-8px}
+.hintp{background:var(--panel2);border:2px dashed var(--line);border-radius:12px;padding:10px 12px;font-size:13.5px}
+.lgsub{font-size:12.5px;color:var(--muted)}
+.lg{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:2px;font-size:13.5px}
+.lg li{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:8px;padding:5px 8px;border-radius:8px}
+.lg li b{color:var(--muted);font-variant-numeric:tabular-nums}
+.lg li span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lg li em{font-style:normal;color:var(--muted);font-variant-numeric:tabular-nums}
+.lg li.up b{color:var(--ok)} .lg li.down b{color:var(--bad)}
+.lg li.me{background:color-mix(in srgb,var(--duck) 24%,transparent);font-weight:700}
+/* modal + toast */
+.modal{position:fixed;inset:0;background:rgba(8,12,20,.6);display:grid;place-items:center;padding:20px;z-index:30}
+.modal .card{max-width:440px;width:100%;display:flex;flex-direction:column;gap:14px}
+.modal h2{margin:0;font-family:var(--f-display);font-size:20px}
+.goals{display:grid;gap:8px}
+.goals button{display:flex;justify-content:space-between;background:var(--panel);border:2px solid var(--line);border-bottom-width:4px;border-radius:12px;padding:12px 14px;cursor:pointer;font-weight:600}
+.goals button span{color:var(--muted);font-weight:500}
+.goals button[aria-pressed="true"]{border-color:var(--duck-d);background:color-mix(in srgb,var(--duck) 16%,var(--panel))}
+.toast{position:fixed;left:50%;top:calc(70px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:600;z-index:40;box-shadow:0 6px 20px rgba(0,0,0,.25);max-width:calc(100% - 32px)}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 2c1 4 6 6 6 12a6 6 0 0 1-12 0c0-3 1.5-5 3-6 0 2 1 3 2 3 0-4-1-6 1-9z" fill="var(--flame)"/><path d="M12 13c1 1.5 3 2.5 3 5a3 3 0 0 1-6 0c0-1.5 1-2.5 3-5z" fill="#ffd166"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 21s-8-5.2-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 5.8-8 11-8 11z" fill="var(--heart)"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z" fill="var(--duck)" stroke="var(--duck-d)" stroke-width="1.2" stroke-linejoin="round"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.5" fill="currentColor"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" fill="none" stroke="currentColor" stroke-width="2.6"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></symbol>
+    <symbol id="i-term" viewBox="0 0 24 24"><path d="m5 7 5 5-5 5M12 18h7" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-pager" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="3" fill="currentColor"/><rect x="6" y="9" width="9" height="4" rx="1" fill="var(--uc,#333)"/><circle cx="17.5" cy="11" r="1.4" fill="var(--uc,#333)"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-chest" viewBox="0 0 24 24"><rect x="3" y="9" width="18" height="11" rx="2" fill="#c98a3a"/><path d="M3 11a9 5 0 0 1 18 0" fill="#e2a24f"/><rect x="10.5" y="11" width="3" height="4" rx="1" fill="var(--duck)"/></symbol>
+  </defs>
+</svg>
+
+<!-- HOME -->
+<div id="home">
+  <div class="top"><div class="wrap">
+    <div class="logo">Uptime<span>Academy</span></div>
+    <div class="chip" id="cStreak" title="Серия дней"><svg><use href="#i-flame"/></svg><span>0</span></div>
+    <div class="chip" id="cXp" title="Опыт"><svg><use href="#i-bolt"/></svg><span>0</span></div>
+    <div class="chip" id="cHearts" title="Жизни"><svg><use href="#i-heart"/></svg><span>5</span></div>
+  </div></div>
+  <div class="wrap home">
+    <div id="path"></div>
+    <aside class="side">
+      <div class="card">
+        <div class="duckcard"><div id="homeDuck"></div><div class="bubble" id="duckSay">…</div></div>
+        <div class="rank"><span>Ранг: <b id="rankName">Стажёр</b></span><span id="rankNext"></span></div>
+        <div class="bar"><div id="rankBar" style="width:0"></div></div>
+      </div>
+      <div class="card">
+        <h3>Неделя</h3>
+        <div class="week" id="week"></div>
+        <div class="goalrow"><span>Дневная цель</span><b id="goalTxt">0 / 30 XP</b></div>
+        <div class="bar ok"><div id="goalBar" style="width:0"></div></div>
+      </div>
+      <div class="card" id="reviewCard" hidden></div>
+      <div class="card">
+        <h3>Квесты дня</h3>
+        <div class="quests" id="quests"></div>
+      </div>
+      <div class="card" id="leagueCard"></div>
+    </aside>
+  </div>
+</div>
+
+<!-- LESSON -->
+<div id="lesson" hidden>
+  <div class="lesson">
+    <div class="lbar">
+      <button class="x" id="lClose" aria-label="Выйти из урока"><svg><use href="#i-x"/></svg></button>
+      <div class="lprog"><div id="lProg" style="width:0"></div></div>
+      <span class="combo" id="lCombo"></span>
+      <div class="chip" id="lHearts"><svg><use href="#i-heart"/></svg><span>5</span></div>
+    </div>
+    <div class="lbody" id="lBody"></div>
+  </div>
+  <div class="lfoot" id="lFoot"><div class="in">
+    <div class="msg" id="lMsg"></div>
+    <button class="btn ghost" id="lHint" hidden>Подсказка</button>
+    <button class="btn" id="lMain">Проверить</button>
+  </div></div>
+</div>
+
+<!-- RESULT -->
+<div id="result" hidden><div class="result" id="resBody"></div></div>
+
+<!-- BOSS -->
+<div id="boss" hidden>
+  <div class="boss">
+    <div class="bhead">
+      <button class="x" id="bClose" aria-label="Сдаться и выйти"><svg><use href="#i-x"/></svg></button>
+      <h2>Ночная смена</h2>
+      <div class="bclock" id="bClock">17:00</div>
+      <div class="speed" role="group" aria-label="Скорость">
+        <button data-sp="0" aria-pressed="false">❚❚</button><button data-sp="1" aria-pressed="false">1×</button><button data-sp="3" aria-pressed="true">3×</button><button data-sp="8" aria-pressed="false">8×</button>
+      </div>
+      <div class="goalbar"><span>Продержись до 22:00</span><div class="bar"><div id="bGoal" style="width:0"></div></div><span id="bGoalTxt">0%</span></div>
+      <div class="pager" id="bPager" hidden><i></i><span id="bPagerTxt"></span></div>
+    </div>
+    <div class="bgrid">
+      <div class="bcol">
+        <div class="stats">
+          <div class="stat"><label>Трафик</label><output id="bRps"></output></div>
+          <div class="stat"><label>Успешность</label><output id="bSucc"></output></div>
+          <div class="stat"><label>p95 api</label><output id="bLat"></output></div>
+          <div class="stat"><label>Error budget</label><output id="bBud"></output></div>
+          <div class="stat"><label>Кредиты</label><output id="bCred"></output></div>
+        </div>
+        <div class="svcs" id="bSvcs"></div>
+        <div class="events" id="bEvents"></div>
+      </div>
+      <div class="bpanel">
+        <div class="btabs" role="tablist"><button role="tab" data-bt="term" aria-selected="true">Терминал</button><button role="tab" data-bt="script" aria-selected="false">Скрипт</button></div>
+        <div data-bp="term" class="term"><div class="tout" id="bOut" style="height:380px"></div><label class="tin" for="bIn"><b>oncall$</b><input id="bIn" autocomplete="off" spellcheck="false" placeholder="kubectl get pods"></label></div>
+        <div data-bp="script" hidden style="display:flex;flex-direction:column;gap:10px">
+          <textarea class="code" id="bCode" spellcheck="false" style="height:300px"></textarea>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="btn ok" id="bRun">Запустить</button><button class="btn ghost" id="bStop">Стоп</button><span id="bScriptState" style="font-size:13px;color:var(--muted)">не запущен</span></div>
+          <div class="tout" id="bSout" style="height:110px;background:var(--term);color:var(--term-ink);border-radius:12px;white-space:pre-wrap"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="onboard" hidden><div class="card">
+  <div class="duckcard"><div id="obDuck"></div><div class="bubble">Я утка-дежурная. Буду учить тебя DevOps и напоминать о прод-окружении, даже когда ты этого не хочешь.</div></div>
+  <h2>Сколько времени в день?</h2>
+  <div class="goals" id="goals">
+    <button data-g="20" aria-pressed="false">Спокойно <span>5 мин · 20 XP</span></button>
+    <button data-g="30" aria-pressed="true">Нормально <span>10 мин · 30 XP</span></button>
+    <button data-g="50" aria-pressed="false">Серьёзно <span>15 мин · 50 XP</span></button>
+    <button data-g="80" aria-pressed="false">Как на дежурстве <span>20 мин · 80 XP</span></button>
+  </div>
+  <button class="btn" id="obGo">Поехали</button>
+</div></div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+/* =================== storage & meta =================== */
+const KEY='uptime-academy-v1', HEART_MS=20*60*1000, MAXH=5;
+const dkey=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const TODAY=()=>dkey(new Date());
+const shift=(k,n)=>{const d=new Date(k+'T12:00:00');d.setDate(d.getDate()+n);return dkey(d)};
+const daysBetween=(a,b)=>Math.round((new Date(b+'T12:00:00')-new Date(a+'T12:00:00'))/864e5);
+function fresh(){return{onboarded:false,goal:30,xp:0,streak:0,best:0,lastDay:null,days:[],hearts:MAXH,heartsAt:Date.now(),done:{},code:null,review:[],league:{tier:0,week:null,xp:0,lastResult:null},daily:{date:TODAY(),xp:0,cmds:0,perfect:false,claimed:{}}}}
+let S;try{S=Object.assign(fresh(),JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(_){S=fresh()}
+const HOOKS={save:[],xp:[],leagueRows:null,leagueZones:null};
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(_){}HOOKS.save.forEach(f=>{try{f(S)}catch(_){}})};
+function ensureDaily(){if(S.daily.date!==TODAY())S.daily={date:TODAY(),xp:0,cmds:0,perfect:false,claimed:{}}}
+function heartsTick(){if(S.hearts<MAXH){const n=Math.floor((Date.now()-S.heartsAt)/HEART_MS);if(n>0){S.hearts=Math.min(MAXH,S.hearts+n);S.heartsAt+=n*HEART_MS;save()}}}
+function streakNow(){if(!S.lastDay)return 0;const g=daysBetween(S.lastDay,TODAY());return g<=1?S.streak:0}
+function addXP(n,silent){
+  ensureDaily();ensureWeek();S.xp+=n;S.daily.xp+=n;S.league.xp+=n;HOOKS.xp.forEach(f=>{try{f(n)}catch(_){}});
+  const t=TODAY();
+  if(S.lastDay!==t){S.streak=(S.lastDay&&daysBetween(S.lastDay,t)===1)?S.streak+1:1;S.lastDay=t;if(!S.days.includes(t))S.days.push(t);S.days=S.days.slice(-60);S.best=Math.max(S.best,S.streak)}
+  save();if(!silent)checkQuests();
+}
+const QUESTS=[
+  {id:'goal',text:()=>`Набери ${S.goal} XP`,prog:()=>[Math.min(S.daily.xp,S.goal),S.goal]},
+  {id:'perfect',text:()=>'Пройди урок без ошибок',prog:()=>[S.daily.perfect?1:0,1]},
+  {id:'cmds',text:()=>'Выполни 15 команд в терминале',prog:()=>[Math.min(S.daily.cmds,15),15]},
+];
+function checkQuests(){ensureDaily();for(const q of QUESTS){const[a,b]=q.prog();if(a>=b&&!S.daily.claimed[q.id]){S.daily.claimed[q.id]=true;addXP(10,true);toast(`Квест «${q.text()}» выполнен · +10 XP`)}}save()}
+const RANKS=[[0,'Стажёр'],[50,'Junior DevOps'],[130,'Middle DevOps'],[230,'Senior DevOps'],[340,'SRE'],[480,'Principal SRE']];
+const rankOf=xp=>{let i=0;RANKS.forEach((r,j)=>{if(xp>=r[0])i=j});return i};
+/* leagues: локально — боты, с сервером — HOOKS.leagueRows */
+const TIERS=['Бронза','Серебро','Золото','Сапфир','Рубин','Алмаз'];
+const BOTS=['k8s_kirill','yaml_yana','pod_petrov','helm_hanna','grep_gosha','sudo_sasha','oncall_olya','cron_kostya','nginx_nina','terraform_tim','docker_dana','ansible_artur','prom_polina','git_gleb','vault_vera','redis_roma','kafka_katya','ci_ilya'];
+const weekKey=()=>{const d=new Date();return shift(TODAY(),-((d.getDay()+6)%7))};
+const weekFrac=()=>Math.min(1,Math.max(0,(Date.now()-new Date(weekKey()+'T00:00:00'))/(7*864e5)));
+function seeded(seed){let h=1779033703^seed.length;for(let i=0;i<seed.length;i++){h=Math.imul(h^seed.charCodeAt(i),3432918353);h=h<<13|h>>>19}return()=>{h=Math.imul(h^h>>>16,2246822507);h=Math.imul(h^h>>>13,3266489909);return((h^=h>>>16)>>>0)/4294967296}}
+function standings(wk,tier,myXp,f){const r=seeded(wk+':'+tier),names=BOTS.slice();for(let i=names.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[names[i],names[j]]=[names[j],names[i]]}
+  const base=[60,100,150,220,300,400][tier];const rows=names.slice(0,9).map(n=>{const tgt=base*(.4+r()*1.4),pace=.7+r()*.6;return{name:n,xp:Math.round(tgt*Math.min(1,f*pace))}});
+  rows.push({name:'ты',xp:myXp,me:true});return rows.sort((a,b)=>b.xp-a.xp||(a.me?-1:b.me?1:0))}
+function ensureWeek(){const wk=weekKey();if(S.league.week===wk)return;if(HOOKS.leagueRows){S.league.week=wk;S.league.xp=0;save();return}
+  if(S.league.week){const rows=standings(S.league.week,S.league.tier,S.league.xp,1);const me=rows.findIndex(x=>x.me)+1;let d=0;
+    if(S.league.xp>0&&me<=3&&S.league.tier<TIERS.length-1)d=1;else if(me>=8&&S.league.tier>0)d=-1;S.league.tier+=d;S.league.lastResult={rank:me,d,seen:false}}
+  S.league.week=wk;S.league.xp=0;save()}
+/* работа над ошибками */
+function addReview(lid,i){if(!S.review.some(x=>x.l===lid&&x.i===i)){S.review.push({l:lid,i});S.review=S.review.slice(-30);save()}}
+let toastT;function toast(m){const t=document.getElementById('toast');t.textContent=m;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,2600)}
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const md=s=>esc(s).replace(/`([^`]+)`/g,'<code>$1</code>').replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>');
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+
+/* =================== duck =================== */
+function duckSVG(mood='ok',cls='duck'){
+  const brow={ok:'',worry:'<path d="M30 24 l14 -4" stroke="#3a2a00" stroke-width="3" stroke-linecap="round"/>',angry:'<path d="M30 20 l15 7" stroke="#3a2a00" stroke-width="3.4" stroke-linecap="round"/>',happy:''}[mood];
+  const eye=mood==='happy'?'<path d="M33 32 q5 -6 10 0" fill="none" stroke="#1b1b1b" stroke-width="3" stroke-linecap="round"/>':'<circle cx="38" cy="32" r="4.6" fill="#1b1b1b"/><circle cx="39.6" cy="30.4" r="1.5" fill="#fff"/>';
+  return `<svg class="${cls}" viewBox="0 0 120 104" aria-hidden="true">
+  <ellipse cx="64" cy="98" rx="40" ry="4" fill="rgba(0,0,0,.12)"/>
+  <path d="M100 62 q18 -10 14 -26 q-6 14 -20 16z" fill="#e8ab14"/>
+  <ellipse cx="64" cy="72" rx="44" ry="25" fill="#f7c234"/>
+  <path d="M46 70 q16 18 40 6" fill="none" stroke="#e8ab14" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="42" cy="36" r="24" fill="#f7c234"/>
+  <path d="M19 40 q-16 0 -17 7 q13 7 25 0z" fill="#f2851f"/><path d="M2 47 q12 3 25 -1" fill="none" stroke="#c9640e" stroke-width="2"/>
+  ${eye}${brow}
+  <path d="M20 26 a24 24 0 0 1 44 -2" fill="none" stroke="#2f3a4f" stroke-width="4"/>
+  <rect x="58" y="22" width="9" height="14" rx="4" fill="#2f3a4f"/>
+  <path d="M63 36 q2 10 -12 12" fill="none" stroke="#2f3a4f" stroke-width="2.5"/><circle cx="50" cy="48" r="3" fill="#2f3a4f"/>
+  </svg>`;
+}
+const LINES={
+  ok:['Красиво. Как зелёный пайплайн в пятницу.','Принято. Даже ревьюер не придрался бы.','Вот это uptime мышления.','Работает. Не трогай.','Senior бы одобрил. Молча, но одобрил.'],
+  bad:['Мимо. В проде так не делай.','Бывает. Главное, что не в 3 ночи.','Почти. Как деплой без тестов: почти работает.','Неверно. Утка разочарована, но верит в тебя.'],
+};
+
+/* =================== curriculum =================== */
+const UNITS=[
+ {id:'linux',n:1,c:'var(--u1)',title:'Терминал',sub:'pwd, ls, cd, cat, grep, ps, kill',lessons:['l1','l2','l3']},
+ {id:'svc',n:2,c:'var(--u2)',title:'Сервисы и сеть',sub:'systemctl, логи, диск, HTTP-коды',lessons:['l4','l5']},
+ {id:'docker',n:3,c:'var(--u3)',title:'Контейнеры',sub:'docker run, ps, logs, переменные окружения',lessons:['l6','l7']},
+ {id:'k8s',n:4,c:'var(--u4)',title:'Kubernetes',sub:'поды, деплойменты, откат, масштабирование',lessons:['l8','l9','l10']},
+ {id:'auto',n:5,c:'var(--u5)',title:'Автоматизация',sub:'пишем свой автоскейлер и автохил',lessons:['l11','l12']},
+ {id:'cicd',n:6,c:'var(--u3)',title:'CI/CD пайплайны',sub:'git, GitHub Actions, секреты, безопасный деплой',lessons:['l14','l15']},
+ {id:'obs',n:7,c:'var(--u2)',title:'Мониторинг и алерты',sub:'Prometheus, PromQL, правила алертов',lessons:['l16','l17']},
+ {id:'boss',n:8,c:'var(--u6)',title:'Боевое дежурство',sub:'всё вместе, в реальном времени',lessons:['l13']},
+ {id:'iac',n:9,c:'var(--u1)',title:'Terraform',sub:'скоро',lessons:[],soon:true},
+];
+const APP_LOG=['08:00:01 INFO  api started on :8080','08:00:02 INFO  connected to db','08:14:22 INFO  GET /orders 200 31ms','08:14:25 WARN  slow query 1200ms','08:15:02 ERROR db connection timeout after 30s','08:15:03 INFO  retry 1/3','08:15:09 INFO  GET /orders 200 54ms','08:31:44 ERROR db connection timeout after 30s','08:31:45 INFO  retry 1/3','08:40:10 INFO  GET /cart 200 22ms','08:52:13 WARN  pool exhausted, waiting','08:52:43 ERROR db connection timeout after 30s','08:53:00 INFO  GET /profile 200 18ms'].join('\n');
+function baseWorld(){
+  const files={
+    '/home/dev/notes.txt':'TODO: разобраться, почему ночью падает nginx\nпароль от прода не здесь, не ищи',
+    '/home/dev/deploy.sh':'#!/bin/bash\necho "deploying..."\nkubectl apply -f k8s/',
+    '/var/log/app.log':APP_LOG,
+    '/var/log/syslog':'Oct 21 03:10:01 prod-web-01 CRON[811]: (root) CMD (logrotate)',
+    '/var/log/nginx/access.log':'10.0.0.5 - - "GET / HTTP/1.1" 200 612',
+    '/var/log/nginx/error.log':'2026/10/21 02:58:11 [notice] start worker processes',
+    '/etc/hostname':'prod-web-01',
+    '/etc/nginx/nginx.conf':'worker_processes auto;\nhttp {\n  server { listen 80; root /var/www/html; }\n}',
+  };
+  const dirs=new Set(['/','/home','/home/dev','/var','/var/log','/var/log/nginx','/var/log/old','/etc','/etc/nginx','/tmp']);
+  return{cwd:'/home/dev',files,dirs,sizes:{},procs:[
+    {pid:1,user:'root',cpu:0.0,mem:0.4,cmd:'/sbin/init'},{pid:612,user:'root',cpu:0.1,mem:0.3,cmd:'/usr/sbin/sshd -D'},
+    {pid:901,user:'root',cpu:0.0,mem:0.2,cmd:'nginx: master process'},{pid:902,user:'www-data',cpu:1.2,mem:0.9,cmd:'nginx: worker process'}],
+    svc:{nginx:{active:true}},disk:41,containers:[],images:['nginx:1.27','api:1.0','postgres:16'],k8s:null,hist:[],f:{read:{}}};
+}
+function k8sWorld(W,deploys){W.k8s={deploys,pods:[]};for(const[n,d]of Object.entries(deploys)){for(let i=0;i<d.replicas;i++)W.k8s.pods.push(kPod(n,d.ok?'Running':'CrashLoopBackOff',d.ok?0:4+i))}return W}
+const rid=()=>Math.random().toString(36).slice(2,7);
+const kPod=(app,status,restarts=0)=>({name:`${app}-7d9f-${rid()}`,app,status,restarts,age:status==='ContainerCreating'?0:42});
+
+const CI_PATH='/home/dev/app/.github/workflows/ci.yml';
+function repoWorld(){const W=baseWorld();['/home/dev/app','/home/dev/app/.github','/home/dev/app/.github/workflows','/home/dev/app/src'].forEach(d=>W.dirs.add(d));
+  W.files[CI_PATH]="name: ci\non:\n  push:\n    branches: [main]\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: 16\n      - run: npm ci\n      - run: npm test\n";
+  W.files['/home/dev/app/package.json']='{\n  "name": "uptime-shop",\n  "version": "1.4.0",\n  "engines": { "node": ">=20" },\n  "scripts": { "test": "vitest run" }\n}';
+  W.files['/home/dev/app/src/cart.js']='export const discount = (sum) => sum > 10000 ? sum * 0.9 : sum;';
+  W.orig={[CI_PATH]:W.files[CI_PATH]};W.cwd='/home/dev/app';
+  W.git={modified:[],staged:[],ahead:0,log:[{h:'9c41e02',msg:'feat: add cart discounts'},{h:'1b7d3aa',msg:'chore: bump engines to node 20'},{h:'f02e9c1',msg:'fix: cart total rounding'}]};
+  W.ci={runs:[{id:4821,status:'failure',title:'feat: add cart discounts'},{id:4820,status:'failure',title:'chore: bump engines to node 20'},{id:4819,status:'success',title:'fix: cart total rounding'}]};
+  return W}
+const LESSONS={
+ l1:{title:'Где я?',xp:15,setup:baseWorld,steps:[
+  {t:'learn',h:'Терминал — главный инструмент девопса',p:'Ты вводишь команду, сервер отвечает текстом. Никаких кнопок. Начнём с ориентации: где ты находишься в файловой системе.'},
+  {t:'task',h:'Узнай текущую папку',p:'Команда `pwd` (print working directory) печатает, где ты сейчас.',hint:'Просто введи pwd и нажми Enter.',check:(W,c)=>c.includes('pwd')},
+  {t:'task',h:'Что здесь лежит?',p:'Команда `ls` показывает содержимое папки.',hint:'ls',check:(W,c)=>c.some(x=>/^ls\b/.test(x))},
+  {t:'quiz',h:'Что сделает `cd ..`?',o:['Перейдёт в родительскую папку','Удалит текущую папку','Покажет скрытые файлы','Выйдет из сервера'],a:0,ex:'Две точки означают папку уровнем выше.'},
+  {t:'task',h:'Прочитай заметку',p:'Команда `cat файл` выводит содержимое файла. Прочитай `notes.txt`.',hint:'cat notes.txt',check:W=>W.f.read['/home/dev/notes.txt']},
+  {t:'task',h:'Иди к логам',p:'Логи в Linux обычно лежат в `/var/log`. Перейди туда через `cd` и посмотри содержимое через `ls`.',hint:'cd /var/log, затем ls',check:(W,c)=>W.cwd==='/var/log'&&/^ls\b/.test(c[c.length-1]||'')},
+ ]},
+ l2:{title:'Читаем логи',xp:15,setup:()=>{const W=baseWorld();W.cwd='/var/log';return W},steps:[
+  {t:'learn',h:'Логи — первое место, куда смотрят при инциденте',p:'Приложение пишет в лог всё, что с ним происходит: запросы, предупреждения, ошибки. Читать их целиком долго, поэтому есть инструменты.'},
+  {t:'task',h:'Хвост лога',p:'Свежие записи в конце файла. Выведи последние 5 строк: `tail -n 5 app.log`.',hint:'tail -n 5 app.log',check:W=>W.f.tail==='/var/log/app.log'},
+  {t:'quiz',h:'В логе 2 миллиона строк. Как быстрее всего найти ошибки?',o:['grep ERROR app.log','cat app.log и листать','Скачать и открыть в блокноте','rm app.log, чтобы не мешал'],a:0,ex:'grep фильтрует строки по шаблону и выводит только совпадения.'},
+  {t:'task',h:'Найди ошибки',p:'Выведи только строки с ошибками: `grep ERROR app.log`.',hint:'grep ERROR app.log',check:W=>W.f.grep&&W.f.grep.file==='/var/log/app.log'&&/error/i.test(W.f.grep.pat)&&!W.f.grep.count},
+  {t:'quiz',h:'Судя по ошибкам, что ломается?',o:['Подключение к базе данных','Закончился диск','Сломался DNS','Истёк SSL-сертификат'],a:0,ex:'Все ERROR — это «db connection timeout». Следующий шаг дежурного: смотреть на базу.'},
+  {t:'task',h:'Сколько их?',p:'Флаг `-c` считает совпадения вместо вывода: `grep -c ERROR app.log`.',hint:'grep -c ERROR app.log',check:W=>W.f.grep&&W.f.grep.count&&W.f.grep.file==='/var/log/app.log'},
+ ]},
+ l3:{title:'Кто съел CPU',xp:20,setup:()=>{const W=baseWorld();W.procs.push({pid:4242,user:'www-data',cpu:98.7,mem:12.1,cmd:'python3 /tmp/.cache/miner.py',ignoreTerm:true});W.files['/tmp/.cache/miner.py']='# ...';W.dirs.add('/tmp/.cache');return W},steps:[
+  {t:'learn',h:'Сервер тормозит',p:'Каждая запущенная программа — процесс со своим номером, PID. Если машина еле отвечает, надо найти, кто съел процессор.'},
+  {t:'task',h:'Список процессов',p:'Выведи все процессы: `ps aux`.',hint:'ps aux',check:(W,c)=>c.some(x=>/^ps\b/.test(x))},
+  {t:'quiz',h:'Какой процесс подозрительный?',o:['python3 /tmp/.cache/miner.py','nginx: worker process','/usr/sbin/sshd -D','/sbin/init'],a:0,ex:'98% CPU, скрытая папка в /tmp и слово miner. Кто-то майнит на твоём сервере.'},
+  {t:'task',h:'Останови его',p:'Заверши процесс по PID: `kill <PID>`. Посмотри PID в таблице. Потом проверь, что процесс исчез.',hint:'Если обычный kill не помог, процесс перехватывает сигнал SIGTERM. Попробуй kill -9 4242.',check:W=>!W.procs.find(p=>p.pid===4242)},
+  {t:'quiz',h:'Чем `kill -9` отличается от `kill`?',o:['Посылает SIGKILL, который процесс не может перехватить','Убивает 9 процессов сразу','Ждёт 9 секунд и убивает','Перезапускает процесс'],a:0,ex:'Обычный kill шлёт SIGTERM: «пожалуйста, завершись». -9 шлёт SIGKILL, ядро убивает процесс без спроса.'},
+ ]},
+ l4:{title:'nginx лёг в 3 ночи',xp:30,setup:()=>{const W=baseWorld();W.svc.nginx={active:false};W.disk=100;W.procs=W.procs.filter(p=>!p.cmd.startsWith('nginx'));
+   W.files['/var/log/nginx/error.log']='2026/10/21 03:11:58 [crit] write() to "/var/log/nginx/access.log" failed (28: No space left on device)\n2026/10/21 03:12:01 [emerg] open() "/run/nginx.pid" failed (28: No space left on device)';
+   W.files['/var/log/old/app-2025.log.1']='...';W.sizes['/var/log/old/app-2025.log.1']='38G';W.files['/var/log/old/readme.txt']='старые логи, кто-нибудь почистите';return W},steps:[
+  {t:'learn',h:'03:12. Звонит мониторинг',p:'Сайт не открывается. На сервере prod-web-01 работает nginx. Разберёмся по шагам, как настоящий дежурный: проверить симптом, найти причину, починить, убедиться.'},
+  {t:'task',h:'Симптом',p:'Проверь, отвечает ли сайт локально: `curl localhost`.',hint:'curl localhost',check:(W,c)=>c.some(x=>/^curl\b/.test(x))},
+  {t:'task',h:'Статус сервиса',p:'Узнай, что с nginx: `systemctl status nginx`.',hint:'systemctl status nginx',check:(W,c)=>c.some(x=>/^systemctl\s+status\s+nginx/.test(x))},
+  {t:'task',h:'Причина в логе',p:'Сервис упал. Причину ищи в его логе ошибок: `/var/log/nginx/error.log`.',hint:'cat /var/log/nginx/error.log',check:W=>W.f.read['/var/log/nginx/error.log']},
+  {t:'task',h:'Проверь диск',p:'«No space left on device». Посмотри заполненность дисков: `df -h`.',hint:'df -h',check:(W,c)=>c.some(x=>/^df\b/.test(x))},
+  {t:'task',h:'Освободи место',p:'Диск заполнен на 100%. Найди огромный файл в `/var/log/old` (подойдёт `ls -la`) и удали его через `rm`.',hint:'ls -la /var/log/old, затем rm /var/log/old/app-2025.log.1',check:W=>W.disk<100},
+  {t:'task',h:'Подними и проверь',p:'Перезапусти сервис `systemctl restart nginx` и убедись, что сайт отвечает: `curl localhost`.',hint:'systemctl restart nginx, затем curl localhost',check:W=>W.svc.nginx.active&&W.f.curl&&W.f.curl.ok&&W.f.curl.port===80},
+  {t:'quiz',h:'Как не допустить этого снова?',o:['Настроить logrotate и алерт на диск > 85%','Каждую ночь перезагружать сервер','Выключить логирование','Купить диск в 10 раз больше'],a:0,ex:'Корневая причина — старые логи никто не удалял. Ротация логов плюс ранний алерт на заполнение диска закрывают её.'},
+ ]},
+ l5:{title:'HTTP и порты',xp:15,setup:baseWorld,steps:[
+  {t:'quiz',h:'Пользователи видят 502 Bad Gateway. Что это значит?',o:['Прокси (nginx) не получил нормальный ответ от бэкенда','У пользователя нет интернета','Страница не найдена','Сервер требует пароль'],a:0,ex:'502 отдаёт прокси, когда сервис за ним упал или отвечает мусором.'},
+  {t:'quiz',h:'Стандартный порт HTTPS?',o:['443','80','22','8080'],a:0,ex:'80 — HTTP, 443 — HTTPS, 22 — SSH.'},
+  {t:'quiz',h:'Как проверить, что слушает порт 80?',o:['ss -tlnp | grep :80','ping 80','ls /port/80','cat :80'],a:0,ex:'ss показывает открытые сокеты: -t TCP, -l слушающие, -n цифрами, -p с процессом.'},
+  {t:'quiz',h:'Код 404 означает...',o:['Ресурс не найден','Сервер упал','Нет доступа','Слишком много запросов'],a:0,ex:'4xx — ошибка на стороне запроса. 404 — такого пути нет.'},
+  {t:'quiz',h:'Сервис отвечает 500. Где искать причину в первую очередь?',o:['В логах приложения','В настройках браузера','В DNS','В расписании cron'],a:0,ex:'5xx — ошибка внутри сервера. Стектрейс почти всегда в логе приложения.'},
+  {t:'quiz',h:'Код 429 Too Many Requests — это...',o:['Сработал rate limit','Сервер перегрет','Ошибка базы','Истёк сертификат'],a:0,ex:'Клиент упёрся в лимит запросов. Решение на стороне клиента: backoff и повтор.'},
+ ]},
+ l6:{title:'Первый контейнер',xp:20,setup:baseWorld,steps:[
+  {t:'learn',h:'Контейнер: приложение в коробке',p:'Образ (image) — шаблон с приложением и всеми зависимостями. Контейнер — запущенный экземпляр образа. Один образ, сколько угодно контейнеров.'},
+  {t:'task',h:'Что запущено?',p:'Посмотри запущенные контейнеры: `docker ps`.',hint:'docker ps',check:(W,c)=>c.some(x=>/^docker\s+ps/.test(x))},
+  {t:'quiz',h:'Образ относится к контейнеру как...',o:['Класс к объекту','Папка к файлу','Сервер к сети','Логин к паролю'],a:0,ex:'Из одного класса создаются объекты, из одного образа — контейнеры.'},
+  {t:'task',h:'Запусти nginx',p:'Запусти nginx в фоне с именем `web`, пробросив порт 8080 хоста на 80 контейнера:\n`docker run -d --name web -p 8080:80 nginx`',hint:'docker run -d --name web -p 8080:80 nginx',check:W=>W.containers.some(x=>x.name==='web'&&x.up&&x.hp==='8080')},
+  {t:'task',h:'Проверь',p:'Сайт из контейнера должен отвечать на 8080: `curl localhost:8080`.',hint:'curl localhost:8080',check:W=>W.f.curl&&W.f.curl.ok&&W.f.curl.port===8080},
+ ]},
+ l7:{title:'Контейнер падает',xp:25,setup:()=>{const W=baseWorld();W.containers.push({id:'3f9a1c7e2b10',name:'api',image:'api:1.0',up:false,code:1,hp:'',env:{},logs:'api v1.0 starting...\nFATAL: environment variable DATABASE_URL is required'});return W},steps:[
+  {t:'learn',h:'Команда собрала образ api:1.0',p:'Его запустили, но сервис не отвечает. Разберись.'},
+  {t:'task',h:'Найди контейнер',p:'`docker ps` показывает только запущенные. Чтобы увидеть все, добавь флаг `-a`.',hint:'docker ps -a',check:(W,c)=>c.some(x=>/^docker\s+ps\s+(-a|--all)/.test(x))},
+  {t:'task',h:'Почему умер?',p:'Статус Exited (1). Почитай логи: `docker logs api`.',hint:'docker logs api',check:W=>W.f.dlogs==='api'},
+  {t:'quiz',h:'Как передать переменную окружения в контейнер?',o:['-e DATABASE_URL=...','-p DATABASE_URL=...','--name DATABASE_URL','Никак, только пересобрать образ'],a:0,ex:'-e задаёт переменную окружения при запуске. Пересобирать образ ради конфига не нужно.'},
+  {t:'task',h:'Освободи имя',p:'Старый контейнер занимает имя `api`. Удали его: `docker rm api`.',hint:'docker rm api',check:W=>!W.containers.find(x=>x.name==='api'&&x.image==='api:1.0'&&!x.env.DATABASE_URL)},
+  {t:'task',h:'Запусти правильно',p:'Запусти заново с переменной:\n`docker run -d --name api -e DATABASE_URL=postgres://db:5432/app api:1.0`',hint:'docker run -d --name api -e DATABASE_URL=postgres://db:5432/app api:1.0',check:W=>W.containers.some(x=>x.name==='api'&&x.up&&x.env.DATABASE_URL)},
+ ]},
+ l8:{title:'Поды и деплойменты',xp:20,setup:()=>k8sWorld(baseWorld(),{web:{replicas:2,image:'web:1.4',ok:true,load:60},api:{replicas:2,image:'api:2.3',ok:true,load:80}}),steps:[
+  {t:'learn',h:'Kubernetes делает рутину за тебя',p:'**Pod** — минимальная единица, один или несколько контейнеров. **Deployment** следит, чтобы нужное число подов всегда работало, и обновляет их без простоя.'},
+  {t:'task',h:'Поды',p:'Посмотри поды: `kubectl get pods`.',hint:'kubectl get pods',check:(W,c)=>c.some(x=>/^(kubectl|k)\s+get\s+po/.test(x))},
+  {t:'task',h:'Деплойменты',p:'Теперь деплойменты: `kubectl get deploy`.',hint:'kubectl get deploy',check:(W,c)=>c.some(x=>/^(kubectl|k)\s+get\s+deploy/.test(x))},
+  {t:'quiz',h:'Ты удалил под, которым управляет Deployment. Что произойдёт?',o:['Deployment создаст новый под','Приложение навсегда потеряет реплику','Удалится весь Deployment','Кластер перезагрузится'],a:0,ex:'Deployment постоянно сверяет желаемое и текущее состояние. Подов меньше, чем надо — создаёт новый.'},
+  {t:'task',h:'Проверь на практике',p:'Удали любой под web: `kubectl delete pod <имя>`. Потом снова `kubectl get pods`.',hint:'Имя возьми из kubectl get pods. Tab дополняет имена.',check:W=>W.f.kdelAt!=null&&W.hist.slice(W.f.kdelAt+1).some(h=>/get\s+po/.test(h))},
+ ]},
+ l9:{title:'CrashLoopBackOff',xp:25,setup:()=>k8sWorld(baseWorld(),{web:{replicas:2,image:'web:1.4',ok:true,load:60},api:{replicas:3,image:'api:2.4',ok:false,prev:'api:2.3',load:90}}),steps:[
+  {t:'learn',h:'Час назад выкатили api:2.4',p:'Пришёл алерт: поды api перезапускаются по кругу. Пользователи получают ошибки.'},
+  {t:'task',h:'Оцени масштаб',p:'Посмотри поды: `kubectl get pods`.',hint:'kubectl get pods',check:(W,c)=>c.some(x=>/get\s+po/.test(x))},
+  {t:'task',h:'Логи упавшего пода',p:'Почитай логи любого пода api: `kubectl logs <имя>`.',hint:'kubectl logs api-… (Tab дополняет имя)',check:W=>W.f.klogsBad},
+  {t:'quiz',h:'Прод лежит. Что сделать первым?',o:['Откатить деплой на прошлую версию','Чинить конфиг прямо в проде','Удалять поды, пока не заработает','Ждать, вдруг само пройдёт'],a:0,ex:'Сначала восстанови сервис, потом разбирайся. Откат — самый быстрый и проверенный путь.'},
+  {t:'task',h:'Откат',p:'Откати деплой: `kubectl rollout undo deployment/api`. Потом смотри `kubectl get pods`, пока все api не станут Running.',hint:'kubectl rollout undo deployment/api, затем kubectl get pods пару раз',check:W=>W.k8s.deploys.api.ok&&W.k8s.pods.filter(p=>p.app==='api').every(p=>p.status==='Running')},
+ ]},
+ l10:{title:'Масштабирование',xp:20,setup:()=>k8sWorld(baseWorld(),{web:{replicas:2,image:'web:1.4',ok:true,load:190},api:{replicas:2,image:'api:2.3',ok:true,load:70}}),steps:[
+  {t:'learn',h:'Вечер пятницы',p:'Трафик вырос в три раза. Два пода web не вытягивают нагрузку.'},
+  {t:'task',h:'Найди узкое место',p:'Посмотри нагрузку на поды: `kubectl top pods`.',hint:'kubectl top pods',check:(W,c)=>c.some(x=>/top\s+po/.test(x))},
+  {t:'task',h:'Добавь реплик',p:'Увеличь web хотя бы до 4 подов: `kubectl scale deployment/web --replicas=5`.',hint:'kubectl scale deployment/web --replicas=5',check:W=>W.k8s.deploys.web.replicas>=4},
+  {t:'quiz',h:'HPA в Kubernetes — это...',o:['Автомасштабирование подов по метрикам','Балансировщик HTTP','Хранилище паролей','Резервная копия кластера'],a:0,ex:'Horizontal Pod Autoscaler сам меняет число реплик по CPU или своим метрикам.'},
+  {t:'quiz',h:'Почему не поставить сразу 100 реплик?',o:['Каждый под потребляет ресурсы и стоит денег','Kubernetes запрещает больше 10','Поды начнут драться за порт','Это замедлит DNS'],a:0,ex:'Лишние реплики — прямые деньги за железо. Задача DevOps — столько, сколько нужно, не больше.'},
+ ]},
+ l11:{title:'Свой автоскейлер',xp:30,steps:[
+  {t:'learn',h:'Хватит скейлить руками',p:'Скрипт запускается каждую игровую минуту. Он получает `cluster`: в `cluster.services` лежат сервисы с полями `name`, `replicas`, `util` (нагрузка от 0 до 1+). Чтобы поменять число реплик, вызывай `cluster.scale(имя, n)`.'},
+  {t:'script',h:'Напиши правило',p:'Если `util` больше 0.8 — добавь одну реплику. Если меньше 0.3 и реплик больше одной — убери одну.',
+   starter:'for (const s of cluster.services) {\n  // твой код\n  \n}\n',
+   cases:[
+    {name:'db перегружен (util 0.95, 2 реплики) → 3',data:{services:[{name:'db',replicas:2,util:.95,pods:[]}]},expect:c=>c.some(x=>x.t==='scale'&&x.n==='db'&&x.r===3)&&c.length===1},
+    {name:'api в норме (util 0.5) → ничего не трогать',data:{services:[{name:'api',replicas:2,util:.5,pods:[]}]},expect:c=>c.length===0},
+    {name:'worker простаивает (util 0.1, 3 реплики) → 2',data:{services:[{name:'worker',replicas:3,util:.1,pods:[]}]},expect:c=>c.some(x=>x.t==='scale'&&x.n==='worker'&&x.r===2)&&c.length===1},
+    {name:'auth простаивает, но реплика одна → не трогать',data:{services:[{name:'auth',replicas:1,util:.05,pods:[]}]},expect:c=>c.length===0},
+   ]},
+  {t:'quiz',h:'Новый под стартует 3 минуты, а скрипт срабатывает каждую. Что сделает простое правило «+1»?',o:['Насоздаёт лишних реплик, пока поды стартуют','Ничего плохого','Удалит все поды','Сломает базу'],a:0,ex:'Пока новый под не готов, util всё ещё высокий, и скрипт добавляет ещё. Поэтому у HPA есть окно стабилизации (cooldown). Пригодится на боевом дежурстве.'},
+ ]},
+ l12:{title:'Автохил',xp:30,steps:[
+  {t:'learn',h:'Поды тоже болеют',p:'У каждого сервиса есть `pods`: массив объектов с полями `name`, `status`, `mem` (память в % от лимита). Удалить под можно через `cluster.restart(имя)`, Deployment создаст новый.'},
+  {t:'script',h:'Лечи автоматически',p:'Удали все поды в статусе `CrashLoopBackOff` и все поды с `mem` больше 90. Остальные не трогай.',
+   starter:'for (const s of cluster.services) {\n  for (const p of s.pods) {\n    // твой код\n  }\n}\n',
+   cases:[
+    {name:'под в CrashLoopBackOff → удалить',data:{services:[{name:'api',replicas:2,util:.5,pods:[{name:'api-a',status:'Running',mem:40},{name:'api-b',status:'CrashLoopBackOff',mem:0}]}]},expect:c=>c.length===1&&c[0].t==='restart'&&c[0].p==='api-b'},
+    {name:'утечка памяти (mem 96) → удалить',data:{services:[{name:'worker',replicas:1,util:.4,pods:[{name:'worker-x',status:'Running',mem:96}]}]},expect:c=>c.length===1&&c[0].p==='worker-x'},
+    {name:'здоровые поды и mem ровно 90 → не трогать',data:{services:[{name:'db',replicas:2,util:.6,pods:[{name:'db-1',status:'Running',mem:90},{name:'db-2',status:'Running',mem:30}]}]},expect:c=>c.length===0},
+    {name:'под ещё создаётся → не трогать',data:{services:[{name:'auth',replicas:1,util:.2,pods:[{name:'auth-n',status:'Creating',mem:5}]}]},expect:c=>c.length===0},
+   ]},
+  {t:'quiz',h:'Что в настоящем Kubernetes перезапускает зависший контейнер?',o:['liveness probe','readiness probe','ConfigMap','Ingress'],a:0,ex:'liveness probe — «жив ли ты?». Не отвечает — kubelet перезапускает контейнер. readiness решает, слать ли на под трафик.'},
+ ]},
+ l14:{title:'Пайплайн покраснел',xp:30,setup:repoWorld,steps:[
+  {t:'learn',h:'CI проверяет каждый коммит',p:'Continuous Integration: каждая правка автоматически собирается и прогоняется тестами. Красный пайплайн значит, что в main что-то сломалось и деплоить нельзя.'},
+  {t:'task',h:'Что с пайплайном?',p:'Посмотри последние запуски: `gh run list`.',hint:'gh run list',check:(W,c)=>c.some(x=>/^gh\s+run\s+list/.test(x))},
+  {t:'task',h:'Логи упавшего шага',p:'Последний запуск упал. Открой логи: `gh run view 4821 --log-failed`.',hint:'gh run view 4821 --log-failed',check:W=>W.f.ghlog},
+  {t:'quiz',h:'В чём причина?',o:['Пайплайн собирает на Node 16, а проект требует Node 20+','Упали юнит-тесты','Нет доступа к npm registry','Кончился диск на раннере'],a:0,ex:'npm ci отказался ставить зависимости: в package.json engines node >=20, а раннер на 16. Коммит «bump engines» сломал CI ещё два запуска назад.'},
+  {t:'edit',h:'Почини пайплайн',p:'Поменяй версию в `node-version` на 20 или новее.',file:'.github/workflows/ci.yml',path:'/home/dev/app/.github/workflows/ci.yml',hint:'Строка `node-version: 16` → `node-version: 20`.',
+   checks:[{name:'Node 20 или новее',test:t=>/node-version:\s*['"]?(2\d|[3-9]\d)\b/.test(t)},{name:'Структура на месте: jobs, test, steps',test:t=>/jobs:/.test(t)&&/test:/.test(t)&&/steps:/.test(t)}],
+   onSave:W=>{if(!W.git.modified.includes('.github/workflows/ci.yml'))W.git.modified.push('.github/workflows/ci.yml')},done:'Файл сохранён. Теперь его надо доставить в репозиторий.'},
+  {t:'task',h:'Закоммить и запушь',p:'`git add .`, затем `git commit -m "ci: node 20"`, затем `git push`. После этого смотри `gh run list`, пока новый запуск не станет success. Посмотреть свою правку можно через `git diff`.',hint:'git add . → git commit -m "ci: node 20" → git push → gh run list (пару раз)',check:W=>W.ci.runs[0].id>4821&&W.ci.runs[0].status==='success'},
+  {t:'quiz',h:'Зачем фиксировать версию Node в пайплайне?',o:['Чтобы сборка была воспроизводимой','Чтобы пайплайн работал быстрее','GitHub без этого не запустит job','Чтобы не платить за раннер'],a:0,ex:'Явная версия гарантирует, что CI собирает так же, как прод. «Какая есть на раннере» однажды обновится без спроса.'},
+ ]},
+ l15:{title:'Безопасный деплой',xp:25,steps:[
+  {t:'learn',h:'CD: код сам едет в прод',p:'Continuous Delivery: после зелёных тестов пайплайн деплоит сам. Две классические дыры: деплой, который не ждёт тестов, и токены, вписанные прямо в репозиторий.'},
+  {t:'quiz',h:'Где хранить токен для деплоя?',o:['В секретах CI, вне репозитория','В .env, закоммиченном в репозиторий','Прямо в YAML пайплайна','В README, чтобы команда знала'],a:0,ex:'Секреты CI шифруются и подставляются только во время запуска. Всё, что попало в git, считай опубликованным.'},
+  {t:'edit',h:'Исправь деплой',p:'Сделай три вещи: job `deploy` должен ждать тесты (`needs: test`), запускаться только из main (`if: github.ref == \'refs/heads/main\'`) и брать токен из секретов (`${{ secrets.KUBE_TOKEN }}`).',file:'.github/workflows/deploy.yml',
+   starter:"name: deploy\non:\n  push:\n    branches: [main, develop]\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm ci && npm test\n  deploy:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: kubectl set image deployment/shop shop=registry.local/shop:${{ github.sha }}\n        env:\n          KUBE_TOKEN: eyJhbGciOiJSUzI1NiIsImtpZCI6Ik1rZ2...\n",
+   hint:'Под `deploy:` добавь строки `    needs: test` и `    if: github.ref == \'refs/heads/main\'`, а значение KUBE_TOKEN замени на `${{ secrets.KUBE_TOKEN }}`.',
+   checks:[{name:'deploy ждёт тесты (needs: test)',test:t=>/deploy:[\s\S]*needs:\s*\[?\s*['"]?test/.test(t)},{name:'Деплой только из main',test:t=>/if:.*github\.ref\s*==\s*['"]refs\/heads\/main['"]/.test(t)},
+    {name:'Токен берётся из секретов, в файле его нет',test:t=>/KUBE_TOKEN:\s*\$\{\{\s*secrets\.\w+\s*\}\}/.test(t)&&!/eyJhbGci/.test(t)},{name:'Job test на месте',test:t=>/\n\s+test:/.test(t)}],done:'Теперь в прод едет только протестированный main, а токен не лежит в git.'},
+  {t:'quiz',h:'Canary-деплой — это...',o:['Новая версия сначала получает малую долю трафика, а ты следишь за метриками','Деплой только по ночам','Деплой без тестов для скорости','Откат на прошлую версию'],a:0,ex:'Если 5% пользователей на новой версии видят ошибки, ты откатываешь, не задев остальных 95%.'},
+  {t:'quiz',h:'Токен уже попал в git-историю. Что делать?',o:['Отозвать токен и выпустить новый','Удалить файл новым коммитом','Сделать репозиторий приватным','Ничего, никто не заметит'],a:0,ex:'Новый коммит не стирает историю, а боты сканируют GitHub на утёкшие токены за минуты. Только отзыв.'},
+ ]},
+ l16:{title:'Метрики и PromQL',xp:25,setup:()=>{const W=baseWorld();W.prom=true;return W},steps:[
+  {t:'learn',h:'Prometheus видит всё',p:'Prometheus каждые 15 секунд опрашивает сервисы и хранит метрики. Спрашивать его можно на языке PromQL. В этом терминале запрос пишется так: `query <выражение>`.'},
+  {t:'task',h:'Кто жив?',p:'Метрика `up` равна 1, если Prometheus достучался до цели, и 0, если нет. Выполни `query up`.',hint:'query up',check:W=>W.f.qup},
+  {t:'quiz',h:'up = 0 у api-2 значит...',o:['Prometheus не может опросить цель: под лежит или недоступен','api-2 обработал 0 запросов','api-2 только что задеплоен','Это нормально для API'],a:0,ex:'up — первое, что проверяют: без него остальные метрики цели просто пропадают с графиков.'},
+  {t:'task',h:'Кто сыпет ошибками?',p:'Счётчик `http_requests_total` только растёт, поэтому смотрят скорость: `query rate(http_requests_total{status=~"5.."}[5m])`.',hint:'query rate(http_requests_total{status=~"5.."}[5m])',check:W=>W.f.q5xx},
+  {t:'quiz',h:'Какой инстанс отдаёт 5xx?',o:['api-1','api-0','api-2','db-0'],a:0,ex:'Почти 6 ошибок в секунду у api-1 против 0.02 у api-0. api-2 лежит целиком, это видно по up.'},
+  {t:'quiz',h:'Четыре золотых сигнала SRE:',o:['Latency, Traffic, Errors, Saturation','CPU, RAM, Disk, Network','Uptime, Downtime, MTTR, MTBF','Logs, Traces, Metrics, Events'],a:0,ex:'Из книги Google SRE: задержка, трафик, ошибки, насыщение. Если следишь за ними, большинство проблем видно сразу.'},
+ ]},
+ l17:{title:'Алерты без спама',xp:25,steps:[
+  {t:'learn',h:'Хороший алерт будит только по делу',p:'Если алерт срабатывает от каждой единичной ошибки, через неделю его перестанут читать. Это alert fatigue, и однажды из-за неё пропустят настоящий инцидент.'},
+  {t:'quiz',h:'Зачем в правиле алерта `for: 5m`?',o:['Сработать, только если условие держится 5 минут','Проверять правило раз в 5 минут','Слать алерт 5 минут подряд','Хранить алерт 5 минут'],a:0,ex:'Короткие всплески проходят сами. for отсекает их и будит только при устойчивой проблеме.'},
+  {t:'edit',h:'Почини правило',p:'Сейчас алерт срабатывает на любую ошибку. Сделай так: порог по доле ошибок (например `sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) > 0.05`), добавь `for` от 2 до 15 минут, severity `critical` и `annotations` с `summary`.',file:'rules/alerts.yml',
+   starter:"groups:\n  - name: shop\n    rules:\n      - alert: HighErrorRate\n        expr: rate(http_requests_total{status=~\"5..\"}[1m]) > 0\n        labels:\n          severity: info\n",
+   hint:'Пример готового правила:\n`expr: sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) > 0.05`\n`for: 5m`, в labels `severity: critical`, ниже `annotations:` и `summary: "5xx выше 5%"`',
+   checks:[{name:'Порог считает долю ошибок, а не любую ошибку',test:t=>{const e=(t.split(/expr:/)[1]||'').split(/\n\s*(for|labels|annotations):/)[0];return e.includes('/')&&/>\s*0?\.\d+/.test(e)}},
+    {name:'for от 2 до 15 минут',test:t=>/\n\s+for:\s*([2-9]|1[0-5])m\b/.test(t)},{name:'severity: critical',test:t=>/severity:\s*['"]?(critical|page)/.test(t)},{name:'annotations с summary',test:t=>/annotations:\s*\n\s+summary:\s*\S/.test(t)}],done:'Такой алерт разбудит только тогда, когда пользователи правда страдают.'},
+  {t:'quiz',h:'Диск заполнен на 70% и растёт на 1% в неделю. Как алертить?',o:['Тикет в бэклог, а не ночной вызов','Будить дежурного немедленно','Никак не алертить','Перезагрузить сервер'],a:0,ex:'До проблемы месяцы. Будить человека стоит, только если без него сломается в ближайшие часы.'},
+  {t:'quiz',h:'Алерт срабатывает 40 раз за ночь и всегда сам проходит. Что делать?',o:['Поправить порог или удалить алерт','Добавить второго дежурного','Отключить звук на телефоне','Ничего, так и должно быть'],a:0,ex:'Алерт, который не требует действий, вредит: учит игнорировать пейджер.'},
+ ]},
+ l13:{title:'Ночная смена',xp:60,boss:true},
+};
+const ORDER=UNITS.flatMap(u=>u.lessons);
+const unitOf=id=>UNITS.find(u=>u.lessons.includes(id));
+const unlocked=id=>{const i=ORDER.indexOf(id);return i===0||S.done[ORDER[i-1]]};
+const nextLesson=()=>ORDER.find(id=>!S.done[id]);
+
+/* =================== fake shell =================== */
+const pad=(s,n)=>String(s).padEnd(n);
+function rp(W,p){if(!p)return W.cwd;if(p==='~'||p.startsWith('~/'))p='/home/dev'+p.slice(1);const parts=(p.startsWith('/')?p:W.cwd+'/'+p).split('/'),st=[];for(const x of parts){if(!x||x==='.')continue;if(x==='..')st.pop();else st.push(x)}return'/'+st.join('/')}
+const parent=p=>p.slice(0,p.lastIndexOf('/'))||'/';
+function children(W,d){const out=[];for(const x of W.dirs)if(x!=='/'&&parent(x)===d)out.push({n:x.split('/').pop(),dir:true,p:x});for(const f in W.files)if(parent(f)===d)out.push({n:f.split('/').pop(),dir:false,p:f});return out.sort((a,b)=>a.n.localeCompare(b.n))}
+function flagsArgs(a){const fl=[],ar=[];for(const x of a)(x.startsWith('-')&&x.length>1?fl:ar).push(x);return{fl,ar}}
+function kSync(W){const K=W.k8s;if(!K)return;
+  K.pods=K.pods.filter(p=>p.status!=='Terminating');
+  for(const p of K.pods)if(p.status==='ContainerCreating'){if(p.age>=1){p.status=K.deploys[p.app].ok?'Running':'CrashLoopBackOff';p.age=1}else p.age++}else{p.age++;if(p.status==='CrashLoopBackOff')p.restarts++}}
+function kRecon(W){const K=W.k8s;for(const[n,d]of Object.entries(K.deploys)){const act=K.pods.filter(p=>p.app===n&&p.status!=='Terminating');for(let i=act.length;i<d.replicas;i++)K.pods.push(kPod(n,'ContainerCreating'));if(act.length>d.replicas)act.slice(d.replicas).forEach(p=>p.status='Terminating')}}
+const kFind=(W,n)=>W.k8s&&W.k8s.pods.find(p=>p.name===n);
+
+function sh(W,line){
+  const r={out:'',cls:''};const a=line.trim().split(/\s+/).map(x=>x.replace(/^["']|["']$/g,''));let cmd=a[0];
+  const err=m=>{r.out=m;r.cls='e';return r};
+  if(cmd==='k')cmd='kubectl';
+  switch(cmd){
+  case 'help':r.out='Доступно: pwd ls cd cat tail head grep ps kill df rm systemctl curl whoami hostname echo clear\n          docker ps|run|logs|stop|rm|images\n          kubectl get|describe|logs|delete|scale|top|rollout\n          git status|add|commit|push|log|diff   gh run list|view   query <promql>\nTab дополняет, ↑ повторяет команду.';r.cls='d';return r;
+  case 'pwd':r.out=W.cwd;return r;
+  case 'whoami':r.out='dev';return r;
+  case 'hostname':r.out='prod-web-01';return r;
+  case 'echo':r.out=a.slice(1).join(' ');return r;
+  case 'ls':{const{fl,ar}=flagsArgs(a.slice(1));const d=rp(W,ar[0]);if(W.files[d]!=null){r.out=ar[0];return r}if(!W.dirs.has(d))return err(`ls: cannot access '${ar[0]}': No such file or directory`);
+    const ch=children(W,d);const long=fl.some(f=>/l/.test(f));
+    r.out=long?['total '+ch.length].concat(ch.map(c=>`${c.dir?'drwxr-xr-x':'-rw-r--r--'} 1 dev dev ${pad(c.dir?'4.0K':(W.sizes[c.p]||Math.max(1,Math.round((W.files[c.p]||'').length/100)/10+'K')),6)} Oct 21 03:00 ${c.n}`)).join('\n'):ch.map(c=>c.n+(c.dir?'/':'')).join('  ');return r}
+  case 'cd':{const d=rp(W,a[1]||'~');if(!W.dirs.has(d))return err(`cd: ${a[1]}: No such file or directory`);W.cwd=d;return r}
+  case 'cat':{if(!a[1])return err('cat: укажи файл');const p=rp(W,a[1]);if(W.dirs.has(p))return err(`cat: ${a[1]}: Is a directory`);if(W.files[p]==null)return err(`cat: ${a[1]}: No such file or directory`);
+    if(W.sizes[p])return err(`cat: ${a[1]}: файл весит ${W.sizes[p]}, терминал такое не переживёт`);W.f.read[p]=true;r.out=W.files[p];return r}
+  case 'tail':case 'head':{let n=10;const rest=[];for(let i=1;i<a.length;i++){if(a[i]==='-n'){n=+a[++i]}else if(/^-\d+$/.test(a[i]))n=+a[i].slice(1);else rest.push(a[i])}
+    const p=rp(W,rest[0]);if(W.files[p]==null)return err(`${cmd}: cannot open '${rest[0]||''}'`);const L=W.files[p].split('\n');r.out=(cmd==='tail'?L.slice(-n):L.slice(0,n)).join('\n');if(cmd==='tail')W.f.tail=p;W.f.read[p]=true;return r}
+  case 'grep':{const{fl,ar}=flagsArgs(a.slice(1));if(ar.length<2)return err('usage: grep [-i] [-c] ШАБЛОН ФАЙЛ');const p=rp(W,ar[1]);if(W.files[p]==null)return err(`grep: ${ar[1]}: No such file or directory`);
+    const ci=fl.some(f=>/i/.test(f)),cnt=fl.some(f=>/c/.test(f));let re;try{re=new RegExp(ar[0],ci?'i':'')}catch(_){re=new RegExp(ar[0].replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),ci?'i':'')}
+    const m=W.files[p].split('\n').filter(l=>re.test(l));W.f.grep={pat:ar[0],file:p,count:cnt};r.out=cnt?String(m.length):m.join('\n');return r}
+  case 'ps':r.out=[pad('USER',10)+pad('PID',7)+pad('%CPU',7)+pad('%MEM',7)+'COMMAND'].concat(W.procs.map(p=>pad(p.user,10)+pad(p.pid,7)+pad(p.cpu.toFixed(1),7)+pad(p.mem.toFixed(1),7)+p.cmd)).join('\n');return r;
+  case 'kill':{const nine=a.some(x=>/^-(9|KILL|SIGKILL)$/.test(x));const pid=+a.filter(x=>!x.startsWith('-'))[1];const p=W.procs.find(x=>x.pid===pid);if(!pid||!p)return err(`kill: (${a[a.length-1]}) - No such process`);
+    if(p.ignoreTerm&&!nine){r.out='';return r}W.procs=W.procs.filter(x=>x!==p);return r}
+  case 'df':r.out=`Filesystem      Size  Used Avail Use% Mounted on\n/dev/nvme0n1p1   50G  ${String(Math.round(W.disk/2)).padStart(3)}G ${String(50-Math.round(W.disk/2)).padStart(4)}G ${String(W.disk).padStart(3)}% /\ntmpfs           2.0G     0  2.0G   0% /run`;return r;
+  case 'rm':{const{fl,ar}=flagsArgs(a.slice(1));if(!ar[0])return err('rm: missing operand');const p=rp(W,ar[0]);if(['/','/etc','/var','/home','/home/dev','/var/log'].includes(p))return err('rm: утка заблокировала это. Не надо так с продом.');
+    if(W.dirs.has(p)&&!fl.some(f=>/r/.test(f)))return err(`rm: cannot remove '${ar[0]}': Is a directory`);if(W.files[p]==null&&!W.dirs.has(p))return err(`rm: cannot remove '${ar[0]}': No such file or directory`);
+    if(W.sizes[p]==='38G'||(W.dirs.has(p)&&p==='/var/log/old'))W.disk=41;delete W.files[p];W.dirs.delete(p);return r}
+  case 'systemctl':{const act=a[1],s=a[2];if(s!=='nginx'&&s!=='nginx.service')return err(`Unit ${s||''}.service could not be found.`);const sv=W.svc.nginx;
+    if(act==='status'){r.out=sv.active?'● nginx.service - A high performance web server\n     Active: active (running) since Wed 2026-10-21 03:20:11\n   Main PID: 901 (nginx)':'● nginx.service - A high performance web server\n     Active: failed (Result: exit-code) since Wed 2026-10-21 03:12:01\n    Process: 901 ExecStart=/usr/sbin/nginx (code=exited, status=1/FAILURE)';r.cls=sv.active?'g':'e';return r}
+    if(act==='restart'||act==='start'){if(W.disk>=100){sv.active=false;return err('Job for nginx.service failed because the control process exited with error code.\nSee "systemctl status nginx" for details.')}sv.active=true;if(!W.procs.find(p=>p.pid===901))W.procs.push({pid:901,user:'root',cpu:0,mem:.3,cmd:'nginx: master process'});return r}
+    if(act==='stop'){sv.active=false;return r}return err('systemctl: неизвестное действие')}
+  case 'curl':{const u=a.slice(1).find(x=>!x.startsWith('-'))||'';const m=u.replace(/^https?:\/\//,'').match(/^(localhost|127\.0\.0\.1)(?::(\d+))?/);if(!m)return err(`curl: (6) Could not resolve host: ${u}`);const port=+(m[2]||80);
+    let ok=false;if(port===80)ok=W.svc.nginx.active;else ok=W.containers.some(c=>c.up&&c.hp===String(port));W.f.curl={port,ok};
+    if(!ok)return err(`curl: (7) Failed to connect to localhost port ${port}: Connection refused`);r.out='<!DOCTYPE html>\n<html><head><title>Welcome to nginx!</title></head>\n<body><h1>Welcome to nginx!</h1></body></html>';r.cls='g';return r}
+  case 'git':return git(W,a.slice(1),err,r,line);
+  case 'gh':return gh(W,a.slice(1),err,r);
+  case 'query':return promq(W,line,err,r);
+  case 'clear':r.clear=true;return r;
+  case 'docker':return docker(W,a.slice(1),err,r);
+  case 'kubectl':return kubectl(W,a.slice(1),err,r,line);
+  case 'sudo':return err('dev is not in the sudoers file. This incident will be reported. (шутка, просто введи команду без sudo)');
+  default:return err(`${cmd}: command not found. Введи help`);
+  }
+}
+function docker(W,a,err,r){
+  const v=a[0];
+  if(v==='ps'){const all=a.includes('-a')||a.includes('--all');const L=W.containers.filter(c=>all||c.up);r.out=[pad('CONTAINER ID',14)+pad('IMAGE',14)+pad('STATUS',22)+pad('PORTS',22)+'NAMES'].concat(L.map(c=>pad(c.id,14)+pad(c.image,14)+pad(c.up?'Up 1 minute':`Exited (${c.code}) 2 min ago`,22)+pad(c.up&&c.hp?`0.0.0.0:${c.hp}->${c.cp}/tcp`:'',22)+c.name)).join('\n');return r}
+  if(v==='images'){r.out=[pad('REPOSITORY',14)+pad('TAG',8)+'SIZE'].concat(W.images.map(i=>{const[n,t]=i.split(':');return pad(n,14)+pad(t,8)+(n==='nginx'?'192MB':n==='api'?'88MB':'438MB')})).join('\n');return r}
+  if(v==='run'){let name=null,hp='',cp='',env={},img=null;for(let i=1;i<a.length;i++){const x=a[i];
+      if(x==='--name')name=a[++i];else if(x==='-p'){[hp,cp]=(a[++i]||'').split(':')}else if(x==='-e'||x==='--env'){const[k,...vv]=(a[++i]||'').split('=');env[k]=vv.join('=')}else if(x.startsWith('-'))continue;else{img=x;break}}
+    if(!img)return err('docker: укажи образ, например nginx');const full=W.images.find(i=>i===img||i.split(':')[0]===img);if(!full)return err(`Unable to find image '${img}' locally\nError: pull access denied for ${img}`);
+    name=name||('eager_'+Math.random().toString(36).slice(2,6));if(W.containers.find(c=>c.name===name))return err(`docker: Error response from daemon: Conflict. The container name "/${name}" is already in use. Удали старый контейнер.`);
+    if(hp&&W.containers.some(c=>c.up&&c.hp===hp))return err(`docker: Bind for 0.0.0.0:${hp} failed: port is already allocated.`);
+    const isApi=full.startsWith('api');const up=!isApi||!!env.DATABASE_URL;const id=Array.from({length:12},()=>'0123456789abcdef'[Math.floor(Math.random()*16)]).join('');
+    W.containers.push({id,name,image:full,up,code:up?0:1,hp,cp,env,logs:isApi?(up?'api v1.0 starting...\nconnected to postgres://db:5432/app\nlistening on :8080':'api v1.0 starting...\nFATAL: environment variable DATABASE_URL is required'):'/docker-entrypoint.sh: Configuration complete; ready for start up'});
+    r.out=id+'f3a9c0d1b2e4';return r}
+  const c=W.containers.find(x=>x.name===a[a.length-1]||x.id.startsWith(a[a.length-1]||'@'));
+  if(v==='logs'){if(!c)return err(`Error: No such container: ${a[1]||''}`);W.f.dlogs=c.name;r.out=c.logs;if(!c.up)r.cls='e';return r}
+  if(v==='stop'){if(!c)return err(`Error: No such container: ${a[1]||''}`);c.up=false;c.code=0;r.out=c.name;return r}
+  if(v==='rm'){if(!c)return err(`Error: No such container: ${a[a.length-1]||''}`);if(c.up&&!a.includes('-f'))return err(`Error: You cannot remove a running container ${c.id}. Stop the container before attempting removal or force remove`);W.containers=W.containers.filter(x=>x!==c);r.out=c.name;return r}
+  return err('docker: доступно ps, run, logs, stop, rm, images');
+}
+const ciOk=W=>/node-version:\s*['"]?(2\d|[3-9]\d)\b/.test(W.files[CI_PATH]||'');
+function git(W,a,err,r,line){const G=W.git;if(!G||!W.cwd.startsWith('/home/dev/app'))return err('fatal: not a git repository (or any of the parent directories): .git');
+  const v=a[0];
+  if(v==='status'){const L=['On branch main'];if(G.ahead)L.push(`Your branch is ahead of 'origin/main' by ${G.ahead} commit(s).\n  (use "git push" to publish your local commits)`);
+    if(G.staged.length)L.push('Changes to be committed:\n'+G.staged.map(f=>'\tmodified:   '+f).join('\n'));
+    if(G.modified.length)L.push('Changes not staged for commit:\n  (use "git add <file>..." to update what will be committed)\n'+G.modified.map(f=>'\tmodified:   '+f).join('\n'));
+    if(!G.staged.length&&!G.modified.length)L.push('nothing to commit, working tree clean');r.out=L.join('\n\n');return r}
+  if(v==='add'){const t=a[1];if(!t)return err('Nothing specified, nothing added.');const all=t==='.'||t==='-A'||t==='--all';
+    const fs=G.modified.filter(f=>all||f===t.replace(/^\.\//,'')||('/home/dev/app/'+f)===rp(W,t));if(!fs.length)return err(G.modified.length?`fatal: pathspec '${t}' did not match any files`:'Нечего добавлять: изменений нет');
+    G.staged.push(...fs.filter(f=>!G.staged.includes(f)));G.modified=G.modified.filter(f=>!fs.includes(f));return r}
+  if(v==='commit'){const m=line.match(/-m\s+"([^"]+)"/)||line.match(/-m\s+'([^']+)'/)||line.match(/-m\s+(\S+)/);if(!m)return err('Укажи сообщение: git commit -m "ci: node 20"');
+    if(!G.staged.length)return err('nothing added to commit (сначала git add)');const h=Math.random().toString(16).slice(2,9);G.log.unshift({h,msg:m[1]});G.ahead++;const n=G.staged.length;G.staged=[];
+    r.out=`[main ${h}] ${m[1]}\n ${n} file changed, 1 insertion(+), 1 deletion(-)`;return r}
+  if(v==='push'){if(!G.ahead){r.out='Everything up-to-date';return r}G.ahead=0;const id=W.ci.runs[0].id+1;W.ci.runs.unshift({id,status:'in_progress',final:ciOk(W)?'success':'failure',title:G.log[0].msg,age:0});
+    r.out=`To github.com:uptime/shop.git\n   ${G.log[1].h}..${G.log[0].h}  main -> main\nremote: GitHub Actions: запущен run ${id}`;return r}
+  if(v==='log'){r.out=G.log.slice(0,6).map(c=>`${c.h} ${c.msg}`).join('\n');return r}
+  if(v==='diff'){const o=(W.orig[CI_PATH]||'').split('\n'),n=(W.files[CI_PATH]||'').split('\n');const L=[];for(let i=0;i<Math.max(o.length,n.length);i++)if(o[i]!==n[i]){if(o[i]!=null)L.push('-'+o[i]);if(n[i]!=null)L.push('+'+n[i])}
+    r.out=L.length?['--- a/.github/workflows/ci.yml','+++ b/.github/workflows/ci.yml',...L].join('\n'):'';return r}
+  return err('git: в игре есть status, add, commit, push, log, diff')}
+function gh(W,a,err,r){const C=W.ci;if(!C)return err('gh: в этом уроке нет репозитория');if(a[0]!=='run')return err('gh: доступно gh run list и gh run view <id>');
+  if(a[1]==='list')for(const x of C.runs)if(x.status==='in_progress'){if(x.age>=1)x.status=x.final;else x.age++}
+  const mark={success:'✓',failure:'X',in_progress:'*'};
+  if(a[1]==='list'){r.out=[pad('STATUS',14)+pad('ID',7)+pad('TITLE',34)+'BRANCH'].concat(C.runs.map(x=>pad(mark[x.status]+' '+x.status,14)+pad(x.id,7)+pad(x.title.slice(0,32),34)+'main')).join('\n');return r}
+  if(a[1]==='view'){const x=C.runs.find(y=>String(y.id)===a[2]);if(!x)return err(`could not find any workflow run with ID ${a[2]||''}`);const logs=a.some(z=>/^--log/.test(z));
+    if(x.status==='in_progress'){r.out=`* run ${x.id} ещё идёт. Проверь через gh run list.`;return r}
+    if(x.status==='success'){r.out=`✓ ci · ${x.id}\nJOBS\n✓ test in 48s\n  ✓ npm ci\n  ✓ npm test (42 passed)`;r.cls='g';return r}
+    if(!logs){r.out=`X ci · ${x.id} · failure\nJOBS\nX test in 21s\n\nЛоги упавшего шага: gh run view ${x.id} --log-failed`;r.cls='e';return r}
+    W.f.ghlog=true;r.out='test\tRun npm ci\nnpm ERR! code EBADENGINE\nnpm ERR! engine Unsupported engine for uptime-shop@1.4.0\nnpm ERR! notsup Required: {"node":">=20"}\nnpm ERR! notsup Actual:   {"npm":"8.19.4","node":"v16.20.2"}\ntest\tProcess completed with exit code 1.';r.cls='e';return r}
+  return err('gh run: доступно list и view')}
+function promq(W,line,err,r){if(!W.prom)return err('query: Prometheus в этом уроке не подключён');const e=line.trim().slice(5).trim().replace(/^['"]|['"]$/g,''),x=e.replace(/\s+/g,'');const row=(l,v)=>pad(l,46)+v;
+  if(!x)return err('Пример: query up');
+  if(/^up(==0)?$/.test(x)){W.f.qup=true;r.out=[['api-0','shop',1],['api-1','shop',1],['api-2','shop',0],['db-0','postgres',1]].filter(t=>!x.includes('==0')||t[2]===0).map(t=>row(`up{instance="${t[0]}", job="${t[1]}"}`,t[2])).join('\n');return r}
+  if(x.includes('histogram_quantile')){r.out=[row('{instance="api-0"}','0.084'),row('{instance="api-1"}','2.410')].join('\n');return r}
+  if(x.includes('http_requests_total')){if(!x.includes('rate(')){r.out='http_requests_total — счётчик, он только растёт с момента старта.\nОберни его в rate(...[5m]), чтобы получить запросы в секунду.';r.cls='d';return r}
+    const five=/status=~?["']5/.test(x);if(five)W.f.q5xx=true;if(x.includes('/')&&five){r.out=row('{}','0.0610');return r}
+    const D=five?[['api-0','500',.02],['api-1','502',4.71],['api-1','500',1.08]]:[['api-0','200',47.6],['api-0','500',.02],['api-1','200',41.9],['api-1','502',4.71],['api-1','500',1.08]];
+    if(/^sum/.test(x)){const by=x.match(/by\((\w+)\)/),k=by?by[1]:null,agg={};for(const d of D){const kk=k==='instance'?d[0]:k==='status'?d[1]:'';agg[kk]=(agg[kk]||0)+d[2]}r.out=Object.entries(agg).map(([kk,v])=>row(kk?`{${k}="${kk}"}`:'{}',v.toFixed(2))).join('\n');return r}
+    r.out=D.map(d=>row(`{instance="${d[0]}", status="${d[1]}"}`,d[2])).join('\n');return r}
+  return err('Нет такой метрики. Есть: up, http_requests_total{instance,status}, http_request_duration_seconds_bucket')}
+function kubectl(W,a,err,r,line){
+  if(!W.k8s)return err('The connection to the server localhost:8080 was refused - кластера в этом уроке нет');
+  kSync(W);const K=W.k8s,v=a[0],res=(a[1]||'').toLowerCase();
+  const out=x=>{kRecon(W);r.out=x;return r};
+  if(v==='get'&&/^po(d|ds)?$/.test(res)){kRecon(W);r.out=[pad('NAME',20)+pad('READY',7)+pad('STATUS',19)+pad('RESTARTS',10)+'AGE'].concat(K.pods.map(p=>pad(p.name,20)+pad(p.status==='Running'?'1/1':'0/1',7)+pad(p.status,19)+pad(p.restarts,10)+p.age+'m')).join('\n');return r}
+  if(v==='get'&&/^deploy/.test(res)){kRecon(W);r.out=[pad('NAME',8)+pad('READY',8)+pad('UP-TO-DATE',12)+'IMAGE'].concat(Object.entries(K.deploys).map(([n,d])=>pad(n,8)+pad(K.pods.filter(p=>p.app===n&&p.status==='Running').length+'/'+d.replicas,8)+pad(d.replicas,12)+d.image)).join('\n');return r}
+  if(v==='top'){const L=[pad('NAME',20)+pad('CPU',8)+'MEMORY'];for(const p of K.pods.filter(p=>p.status==='Running')){const d=K.deploys[p.app];L.push(pad(p.name,20)+pad(Math.min(99,Math.round(d.load/d.replicas))+'%',8)+(120+Math.round(Math.random()*80))+'Mi')}return out(L.join('\n'))}
+  const podName=/^po(d|ds)?$/.test(res)?a[2]:a[1];
+  if(v==='logs'){const p=kFind(W,podName);if(!p)return err(`Error from server (NotFound): pods "${podName||''}" not found`);const d=K.deploys[p.app];
+    if(!d.ok&&p.app==='api'){W.f.klogsBad=true;r.cls='e';return out(`api ${d.image} starting\nloading config /etc/api/config.yaml\npanic: unknown config key "db.pool_size_max"\n\ngoroutine 1 [running]:\nmain.loadConfig()\n\t/src/config.go:48 +0x1c4`)}
+    return out(`${p.app} started\nGET /healthz 200 2ms\nGET /v1/items 200 34ms`)}
+  if(v==='describe'){const p=kFind(W,podName);if(!p)return err(`Error from server (NotFound): pods "${podName||''}" not found`);const d=K.deploys[p.app];return out(`Name:       ${p.name}\nNamespace:  prod\nImage:      ${d.image}\nStatus:     ${p.status}\nRestarts:   ${p.restarts}\nEvents:\n  ${p.status==='CrashLoopBackOff'?'Warning  BackOff  Back-off restarting failed container':'Normal   Started  Started container '+p.app}`)}
+  if(v==='delete'){const p=kFind(W,podName);if(!p)return err(`Error from server (NotFound): pods "${podName||''}" not found`);p.status='Terminating';W.f.kdelAt=W.hist.length;r.cls='g';return out(`pod "${p.name}" deleted`)}
+  if(v==='scale'){let t=a[1]||'';if(t.includes('/'))t=t.split('/')[1];else if(/^deploy/.test(t))t=a[2]||'';const m=line.match(/--replicas[=\s]+(\d+)/);const d=K.deploys[t];if(!d)return err(`Error from server (NotFound): deployments.apps "${t}" not found`);if(!m)return err('error: укажи --replicas=N');
+    const n=+m[1];if(n<0||n>20)return err('error: давай от 0 до 20');d.replicas=n;r.cls='g';return out(`deployment.apps/${t} scaled`)}
+  if(v==='rollout'){let t=a[2]||'';if(t.includes('/'))t=t.split('/')[1];const d=K.deploys[t];if(!d)return err(`Error from server (NotFound): deployments.apps "${t}" not found`);
+    if(a[1]==='undo'){if(!d.prev)return err('error: нет предыдущей ревизии');d.image=d.prev;d.prev=null;d.ok=true;K.pods.filter(p=>p.app===t).forEach(p=>p.status='Terminating');r.cls='g';return out(`deployment.apps/${t} rolled back`)}
+    if(a[1]==='status'){const ready=K.pods.filter(p=>p.app===t&&p.status==='Running').length;return out(ready>=d.replicas?`deployment "${t}" successfully rolled out`:`Waiting for deployment "${t}" rollout to finish: ${ready} of ${d.replicas} updated replicas are available...`)}
+    return err('kubectl rollout: доступно undo, status')}
+  return err(`error: неизвестная команда "${v||''}". Попробуй kubectl get pods`);
+}
+function complete(W,val){const parts=val.split(' '),last=parts.pop();const words=['kubectl','get','pods','deploy','top','logs','describe','delete','pod','scale','rollout','undo','status','--replicas=','docker','ps','run','images','stop','rm','systemctl','restart','nginx','grep','tail','cat','curl','localhost','git','add','commit','push','diff','gh','list','view','--log-failed','query'];
+  if(W.k8s)words.push(...W.k8s.pods.map(p=>p.name),...Object.keys(W.k8s.deploys).map(n=>'deployment/'+n));W.containers.forEach(c=>words.push(c.name));
+  if(/^(cat|cd|ls|tail|head|rm|grep)$/.test(parts[0]||'')||last.includes('/')){const base=last.includes('/')?last.slice(0,last.lastIndexOf('/')+1):'';const d=rp(W,base||'.');children(W,d).forEach(c=>words.push(base+c.n+(c.dir?'/':'')))}
+  const m=[...new Set(words)].filter(w=>w.startsWith(last)&&w!==last);if(m.length===1){parts.push(m[0]);return{val:parts.join(' ')+(m[0].endsWith('/')||m[0].endsWith('=')?'':' ')}}
+  if(m.length>1){let p=m[0];for(const w of m)while(!w.startsWith(p))p=p.slice(0,-1);if(p.length>last.length){parts.push(p);return{val:parts.join(' ')}}return{list:m.slice(0,12).join('  ')}}return{}}
+
+/* =================== script worker =================== */
+const WORKER_SRC=`let fn=null,state={};
+function mk(d,calls,logs){const sv=d.services;return{time:d.time||'20:00',minute:d.minute||0,rps:d.rps||300,success:d.success==null?1:d.success,credits:d.credits||100,budget:d.budget||100,services:sv,service:n=>sv.find(s=>s.name===n)||null,scale:(n,r)=>{calls.push({t:'scale',n,r:Math.round(+r)})},restart:p=>{calls.push({t:'restart',p:String(p)})}}}
+onmessage=e=>{const m=e.data;
+ if(m.type==='test'){let f;try{f=new Function('cluster','log','state','"use strict";\\n'+m.code)}catch(err){postMessage({type:'test',err:'SyntaxError: '+err.message});return}
+  postMessage({type:'test',res:m.cases.map(d=>{const calls=[],logs=[];try{f(mk(d,calls,logs),x=>logs.push(String(x)),{});return{calls,logs}}catch(err){return{calls,logs,err:err.message}}})});return}
+ if(m.type==='load'){try{fn=new Function('cluster','log','state','"use strict";\\n'+m.code);state={};postMessage({type:'loaded'})}catch(err){postMessage({type:'loaded',err:'SyntaxError: '+err.message})}return}
+ if(m.type==='tick'&&fn){const calls=[],logs=[];try{fn(mk(m.snap,calls,logs),x=>logs.push(typeof x==='string'?x:JSON.stringify(x)),state);postMessage({type:'tick',calls,logs})}catch(err){postMessage({type:'tick',calls,logs,err:err.message})}}};`;
+const WORKER_URL=URL.createObjectURL(new Blob([WORKER_SRC],{type:'text/javascript'}));
+function runTests(code,cases){return new Promise(res=>{const w=new Worker(WORKER_URL);const to=setTimeout(()=>{w.terminate();res({err:'Скрипт выполняется слишком долго. Похоже на бесконечный цикл.'})},1500);
+  w.onmessage=e=>{clearTimeout(to);w.terminate();res(e.data)};w.onerror=e=>{clearTimeout(to);w.terminate();res({err:e.message||'Ошибка скрипта'})};w.postMessage({type:'test',code,cases:cases.map(c=>c.data)})})}
+
+/* =================== screens =================== */
+function show(id){['home','lesson','result','boss'].forEach(s=>document.getElementById(s).hidden=s!==id);window.scrollTo(0,0)}
+
+function renderHome(){
+  heartsTick();ensureDaily();const st=streakNow();
+  const cs=$('#cStreak');cs.querySelector('span').textContent=st;cs.classList.toggle('dim',st===0||S.daily.xp===0);
+  $('#cXp span').textContent=S.xp;$('#cHearts span').textContent=S.hearts;
+  const ri=rankOf(S.xp),cur=RANKS[ri],nx=RANKS[ri+1];$('#rankName').textContent=cur[1];
+  $('#rankNext').textContent=nx?`до «${nx[1]}» ${nx[0]-S.xp} XP`:'максимум';$('#rankBar').style.width=nx?((S.xp-cur[0])/(nx[0]-cur[0])*100)+'%':'100%';
+  $('#goalTxt').textContent=`${Math.min(S.daily.xp,S.goal)} / ${S.goal} XP`;$('#goalBar').style.width=Math.min(100,S.daily.xp/S.goal*100)+'%';
+  const wk=$('#week');wk.innerHTML='';const names=['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];for(let i=-6;i<=0;i++){const k=shift(TODAY(),i);const d=new Date(k+'T12:00:00');const el=document.createElement('div');el.innerHTML=`${names[d.getDay()]}<i class="${S.days.includes(k)?'on':''} ${i===0?'today':''}"></i>`;wk.append(el)}
+  const q=$('#quests');q.innerHTML='';for(const x of QUESTS){const[a,b]=x.prog();const done=a>=b;const el=document.createElement('div');el.className='q'+(done?' done':'');el.innerHTML=`<div class="qh"><span style="color:inherit;font-weight:600"></span><span>${a}/${b}${done?' ✓':''}</span></div><div class="bar ok"><div style="width:${a/b*100}%"></div></div>`;el.querySelector('.qh span').textContent=x.text();q.append(el)}
+  const rc=$('#reviewCard');rc.hidden=!S.review.length;
+  if(S.review.length){rc.innerHTML=`<h3>Работа над ошибками</h3><p style="margin:0 0 12px;font-size:13.5px;color:var(--muted)">Вопросов, где ты ошибся: ${S.review.length}. Жизни здесь не тратятся.</p><button class="btn ok" id="revGo" style="width:100%">Повторить</button>`;$('#revGo').onclick=startReview}
+  ensureWeek();const tier=S.league.tier,rows=(HOOKS.leagueRows&&HOOKS.leagueRows())||standings(S.league.week,tier,S.league.xp,weekFrac());const left=Math.max(1,7-Math.floor(weekFrac()*7));
+  const z=(HOOKS.leagueZones&&HOOKS.leagueZones())||{up:tier<TIERS.length-1?3:0,down:tier>0?3:0};
+  const ranked=rows.map((x,i)=>Object.assign({rank:i+1},x)),vis=ranked.slice(0,10);if(!vis.some(x=>x.me)){const mine=ranked.find(x=>x.me);if(mine)vis.push(mine)}
+  $('#leagueCard').innerHTML=`<h3>Лига «${TIERS[tier]}»</h3><div class="lgsub">${z.up?`Топ-${z.up} поднимаются`:'Высшая лига'}${z.down?`, последние ${z.down} вылетают`:''} · ${left} ${plural(left,'день','дня','дней')} до конца</div><ol class="lg">${vis.map(x=>`<li class="${x.me?'me':''} ${x.rank<=z.up?'up':''} ${x.rank>ranked.length-z.down?'down':''}"><b>${x.rank}</b><span>${esc(x.name)}</span><em>${x.xp} XP</em></li>`).join('')}</ol>`;
+  // duck mood
+  let mood='ok',say;const nl=nextLesson();const gap=S.lastDay?daysBetween(S.lastDay,TODAY()):0;
+  if(S.hearts===0){mood='worry';const m=Math.ceil((HEART_MS-(Date.now()-S.heartsAt))/60000);say=`Жизни кончились, как error budget в Чёрную пятницу. Новая через ${m} мин. Можно пока повторить пройденный урок.`}
+  else if(S.lastDay&&gap>1){mood='angry';say=`Тебя не было ${gap} дн. Я пинговал тебя через liveness probe. Не ответил. Серия обнулилась. Начнём заново?`}
+  else if(st>0&&S.daily.xp===0){mood='worry';say=`Серия ${st} дн. сгорит в полночь. Один урок, пять минут. Прод сам себя не поднимет.`}
+  else if(S.league.lastResult&&!S.league.lastResult.seen){const lr=S.league.lastResult;lr.seen=true;save();const tn=TIERS[S.league.tier];mood=lr.d>0?'happy':lr.d<0?'angry':'ok';
+    say=lr.d>0?`Неделя закрыта: ${lr.rank}-е место. Ты в лиге «${tn}». Утка гордится, но виду не подаёт.`:lr.d<0?`Неделя закрыта: ${lr.rank}-е место. Вылет в лигу «${tn}». Пока ты отдыхал, yaml_yana деплоила.`:`Неделя закрыта: ${lr.rank}-е место. Остаёшься в лиге «${tn}». Можно лучше.`}
+  else if(S.review.length>=3){mood='worry';say=`У тебя ${S.review.length} вопросов в работе над ошибками. Это как техдолг, только твой личный. Разберём?`}
+  else if(S.daily.xp>=S.goal){mood='happy';say=nl?`Дневная цель есть. Можешь идти спать. Но пейджер я не выключу. Следующий урок: «${LESSONS[nl].title}».`:'Ты прошёл всё, что есть. Новые юниты скоро. Я слежу.'}
+  else if(!S.xp){say='Привет. Прод стоит. Пока что. Давай научу тебя его держать. Жми на первый урок.'}
+  else say=nl?`Сегодня по плану: «${LESSONS[nl].title}». До цели ${Math.max(0,S.goal-S.daily.xp)} XP.`:'Всё пройдено. Повтори любой урок, чтобы сохранить серию.';
+  $('#homeDuck').innerHTML=duckSVG(mood);$('#duckSay').textContent=say;
+  // path
+  const P=$('#path');P.innerHTML='';const offs=[0,56,84,56,0,-56,-84,-56];let k=0;
+  for(const u of UNITS){
+    const doneN=u.lessons.filter(l=>S.done[l]).length;const uLocked=u.soon||!unlocked(u.lessons[0]);
+    const sec=document.createElement('section');sec.className='unit'+(uLocked?' locked':'');sec.style.setProperty('--uc',u.c);
+    sec.innerHTML=`<div class="uhead" style="background:${u.c}"><div><small>Юнит ${u.n}</small><h2></h2><p></p></div><span class="cnt">${u.soon?'скоро':doneN+'/'+u.lessons.length}</span></div><div class="nodes"></div>`;
+    sec.querySelector('h2').textContent=u.title;sec.querySelector('p').textContent=u.sub;
+    const nodes=sec.querySelector('.nodes');
+    if(u.soon){const n=document.createElement('div');n.className='node locked';n.innerHTML=`<button class="nbtn" disabled aria-label="Скоро"><svg><use href="#i-lock"/></svg></button><span class="nlabel">Утка уже пишет уроки</span>`;nodes.append(n)}
+    for(const id of u.lessons){const L=LESSONS[id];const done=!!S.done[id],open=unlocked(id),cur=id===nl;
+      const n=document.createElement('div');n.className='node'+(done?' done':'')+(open?'':' locked')+(cur?' cur':'')+(L.boss?' boss':'');n.style.transform=`translateX(${offs[k++%8]}px)`;
+      n.innerHTML=`${cur?'<span class="start">Начать</span>':''}<button class="nbtn" ${open?'':'disabled'} aria-label="${esc(L.title)}"><svg><use href="#${L.boss?'i-pager':done?'i-check':open?(id==='l1'?'i-play':'i-term'):'i-lock'}"/></svg></button><span class="nlabel"></span>`;
+      n.querySelector('.nlabel').textContent=L.title+(done?'':` · ${L.xp} XP`);
+      if(open)n.querySelector('.nbtn').onclick=()=>startLesson(id);nodes.append(n)}
+    P.append(sec)}
+}
+
+/* =================== lesson runner =================== */
+let R=null;
+function startLesson(id){
+  heartsTick();const L=LESSONS[id];
+  if(S.hearts===0&&!S.done[id]){toast('Жизни кончились. Повтори пройденный урок или подожди.');return}
+  if(L.boss){startBoss();return}
+  R={id,L,steps:L.steps.map((s,i)=>Object.assign({},s,{__i:i})),i:0,mistakes:0,combo:0,bestCombo:0,t0:Date.now(),W:L.setup?L.setup():null,replay:!!S.done[id],stepStart:0,cmds:[],hist:[],hi:0,checked:false,firstTry:true,total:L.steps.length};
+  show('lesson');renderStep();
+}
+function startReview(){const items=S.review.slice(0,8);if(!items.length)return;
+  const steps=items.map(x=>Object.assign({},LESSONS[x.l].steps[x.i],{__rv:x.l+':'+x.i,order:null}));
+  R={id:'review',L:{title:'Работа над ошибками',xp:10},steps,i:0,mistakes:0,combo:0,bestCombo:0,t0:Date.now(),W:null,review:true,replay:false,cmds:[],hist:[],hi:0,checked:false,firstTry:true,total:steps.length};
+  show('lesson');renderStep()}
+function setFoot(state,html,btnText,btnCls,hint){
+  const f=$('#lFoot');f.className='lfoot'+(state?' '+state:'');$('#lMsg').innerHTML=html||'';
+  const b=$('#lMain');b.textContent=btnText;b.className='btn'+(btnCls?' '+btnCls:'');b.disabled=false;$('#lHint').hidden=!hint;
+}
+function renderStep(){
+  const s=R.steps[R.i],B=$('#lBody');R.checked=false;R.cmds=[];R.keyH=null;
+  $('#lProg').style.width=(Math.min(R.i,R.total)/R.total*100)+'%';$('#lHearts span').textContent=S.hearts;$('#lCombo').textContent=R.combo>=3?`×${R.combo} подряд`:'';
+  const kinds={learn:'Теория',quiz:'Вопрос',task:'Практика в терминале',script:'Код',edit:'Конфиг'};
+  B.innerHTML=`<span class="kind">${kinds[s.t]}${s.retry?' · повтор':''}</span>`;
+  if(s.t==='learn'){const d=document.createElement('div');d.className='learn';d.innerHTML=`${duckSVG('ok')}<div style="display:flex;flex-direction:column;gap:10px"><h2>${md(s.h)}</h2><p>${md(s.p)}</p></div>`;B.append(d);setFoot('','','Дальше');$('#lMain').onclick=next;return}
+  const h=document.createElement('h2');h.innerHTML=md(s.h);B.append(h);
+  if(s.p){const p=document.createElement('p');p.innerHTML=md(s.p).replace(/\n/g,'<br>');B.append(p)}
+  if(s.t==='quiz'){
+    const order=s.order||(s.order=s.o.map((_,i)=>i).sort(()=>Math.random()-.5));let sel=null;
+    const box=document.createElement('div');box.className='opts';
+    order.forEach((oi,n)=>{const b=document.createElement('button');b.className='opt';b.setAttribute('aria-pressed','false');b.innerHTML=`<kbd>${n+1}</kbd><span>${md(s.o[oi])}</span>`;b.dataset.oi=oi;
+      b.onclick=()=>{if(R.checked)return;sel=oi;box.querySelectorAll('.opt').forEach(x=>x.setAttribute('aria-pressed',x===b));$('#lMain').disabled=false};box.append(b)});
+    B.append(box);setFoot('','','Проверить');$('#lMain').disabled=true;
+    $('#lMain').onclick=()=>{if(sel===null)return;R.checked=true;const ok=sel===s.a;
+      box.querySelectorAll('.opt').forEach(x=>{if(+x.dataset.oi===s.a)x.classList.add('right');else if(+x.dataset.oi===sel)x.classList.add('wrong')});
+      if(ok)good(s.ex);else bad(`Правильно: ${s.o[s.a]}. ${s.ex}`,s)};
+    R.keyH=e=>{if(R.checked||!/^[1-4]$/.test(e.key)||/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName))return;box.children[+e.key-1]?.click()};
+  }
+  if(s.t==='task'){
+    const t=document.createElement('div');t.className='term';t.innerHTML=`<div class="tout" id="tOut"></div><label class="tin" for="tIn"><b></b><input id="tIn" autocomplete="off" spellcheck="false" autocapitalize="off"></label>`;B.append(t);
+    const O=t.querySelector('#tOut'),I=t.querySelector('#tIn'),pr=t.querySelector('b');const prompt=()=>pr.textContent=`dev@prod-web-01:${R.W.cwd.replace('/home/dev','~')}$`;prompt();
+    for(const x of R.hist.slice(-30))line(O,x.text,x.cls);
+    if(!R.hist.length)line(O,'Введи команду и нажми Enter. help — список команд.','d');
+    I.onkeydown=e=>{
+      if(e.key==='Enter'){const v=I.value.trim();I.value='';if(!v)return;const ps=pr.textContent+' '+v;line(O,ps,'c');R.hist.push({text:ps,cls:'c'});
+        const res=sh(R.W,v);R.W.hist.push(v);R.cmds.push(v);R.hi=R.W.hist.length;ensureDaily();S.daily.cmds++;save();
+        if(res.clear){O.innerHTML='';R.hist=[]}else if(res.out){line(O,res.out,res.cls);R.hist.push({text:res.out,cls:res.cls})}prompt();
+        if(!R.checked&&s.check(R.W,R.cmds)){R.checked=true;good(s.done||'Готово. Так и делают на реальных серверах.')}}
+      else if(e.key==='ArrowUp'){if(R.hi>0){R.hi--;I.value=R.W.hist[R.hi]}e.preventDefault()}
+      else if(e.key==='ArrowDown'){if(R.hi<R.W.hist.length-1){R.hi++;I.value=R.W.hist[R.hi]}else{R.hi=R.W.hist.length;I.value=''}e.preventDefault()}
+      else if(e.key==='Tab'){e.preventDefault();const c=complete(R.W,I.value);if(c.val!=null)I.value=c.val;else if(c.list)line(O,c.list,'d')}};
+    setFoot('','<span style="color:var(--muted)">Выполни задание в терминале, проверка автоматическая.</span>','Пропустить','ghost',true);
+    $('#lMain').onclick=()=>{R.checked=true;R.mistakes++;R.combo=0;setFoot('bad',`${duckSVG('worry','duckmini')}<div><b>Пропущено</b><span>Решение: <code>${esc(s.hint)}</code></span></div>`,'Дальше','bad');$('#lMain').onclick=next};
+    $('#lHint').onclick=()=>{line(O,'Подсказка утки: '+s.hint,'d');R.hist.push({text:'Подсказка утки: '+s.hint,cls:'d'});R.firstTry=false};
+    setTimeout(()=>I.focus({preventScroll:true}),50);
+  }
+  if(s.t==='edit'){
+    const fn=document.createElement('div');fn.className='fname';fn.textContent=s.file;
+    const ta=document.createElement('textarea');ta.className='code';ta.spellcheck=false;ta.value=s.code!=null?s.code:(s.path&&R.W?R.W.files[s.path]:s.starter);
+    ta.onkeydown=e=>{if(e.key==='Tab'){e.preventDefault();ta.setRangeText('  ',ta.selectionStart,ta.selectionEnd,'end')}};ta.oninput=()=>s.code=ta.value;
+    const ts=document.createElement('div');ts.className='tests';ts.innerHTML=s.checks.map(c=>`<div><span>○</span><small>${esc(c.name)}</small></div>`).join('');B.append(fn,ta,ts);
+    setFoot('','<span style="color:var(--muted)">Отредактируй файл и нажми «Проверить».</span>','Проверить','',!!s.hint);
+    $('#lHint').onclick=()=>{if(B.querySelector('.hintp'))return;const h=document.createElement('div');h.className='hintp';h.innerHTML='Подсказка утки: '+md(s.hint).replace(/\n/g,'<br>');B.insertBefore(h,fn);R.firstTry=false};
+    $('#lMain').onclick=()=>{const txt=ta.value;let all=true;ts.innerHTML='';
+      for(const c of s.checks){let ok=false;try{ok=c.test(txt)}catch(_){}all=all&&ok;const d=document.createElement('div');d.innerHTML=`<span class="${ok?'p':'f'}">${ok?'✓':'✕'}</span><small></small>`;d.querySelector('small').textContent=c.name;ts.append(d)}
+      if(all){if(s.path&&R.W){R.W.files[s.path]=txt;if(s.onSave)s.onSave(R.W)}R.checked=true;good(s.done||'Конфиг в порядке.')}
+      else{R.firstTry=false;$('#lFoot').className='lfoot bad';$('#lMsg').innerHTML=`${duckSVG('worry','duckmini')}<div><b>Пока не всё</b><span>Смотри на красные пункты. Жизни здесь не тратятся.</span></div>`}};
+  }
+  if(s.t==='script'){
+    const ta=document.createElement('textarea');ta.className='code';ta.spellcheck=false;ta.value=s.code||s.starter;ta.id='scriptIn';
+    ta.onkeydown=e=>{if(e.key==='Tab'){e.preventDefault();ta.setRangeText('  ',ta.selectionStart,ta.selectionEnd,'end')}};ta.oninput=()=>s.code=ta.value;
+    const ts=document.createElement('div');ts.className='tests';ts.innerHTML=s.cases.map(c=>`<div><span>○</span><small>${esc(c.name)}</small></div>`).join('');B.append(ta,ts);
+    setFoot('','<span style="color:var(--muted)">Код запускается на тестовых ситуациях кластера.</span>','Проверить');
+    $('#lMain').onclick=async()=>{const b=$('#lMain');b.disabled=true;b.textContent='Проверяю…';const res=await runTests(ta.value,s.cases);b.disabled=false;b.textContent='Проверить';
+      if(res.err){ts.innerHTML=`<div><span class="f">✕</span><small>${esc(res.err)}</small></div>`;R.firstTry=false;return}
+      let all=true;ts.innerHTML='';res.res.forEach((r,i)=>{const ok=!r.err&&s.cases[i].expect(r.calls);all=all&&ok;const d=document.createElement('div');
+        d.innerHTML=`<span class="${ok?'p':'f'}">${ok?'✓':'✕'}</span><small></small>`;d.querySelector('small').textContent=s.cases[i].name+(ok?'':r.err?` — ошибка: ${r.err}`:` — вызовы: ${r.calls.map(c=>c.t==='scale'?`scale('${c.n}', ${c.r})`:`restart('${c.p}')`).join(', ')||'нет'}`);ts.append(d)});
+      if(all){S.code=(S.code&&!S.code.includes(ta.value)?S.code+'\n\n':'')+`// ${R.L.title}\n`+ta.value;save();R.checked=true;good('Все тесты зелёные. Этот код пригодится на боевом дежурстве, он уже там.')}else{R.firstTry=false;$('#lFoot').className='lfoot bad';$('#lMsg').innerHTML=`${duckSVG('worry','duckmini')}<div><b>Тесты не прошли</b><span>Поправь код и проверь снова. Жизни за это не снимаются.</span></div>`}};
+  }
+}
+function line(O,text,cls){const d=document.createElement('div');if(cls)d.className=cls;d.textContent=text;O.append(d);O.scrollTop=O.scrollHeight}
+function good(ex){const cs=R.steps[R.i];if(R.review&&cs&&cs.__rv){S.review=S.review.filter(x=>x.l+':'+x.i!==cs.__rv);save()}R.combo++;R.bestCombo=Math.max(R.bestCombo,R.combo);$('#lCombo').textContent=R.combo>=3?`×${R.combo} подряд`:'';
+  setFoot('ok',`${duckSVG('happy','duckmini')}<div><b>${pick(LINES.ok)}</b><span>${md(ex||'')}</span></div>`,'Дальше','ok');$('#lMain').onclick=next;setTimeout(()=>$('#lMain').focus({preventScroll:true}),0)}
+function bad(ex,s){R.mistakes++;R.combo=0;if(!R.review&&s.__i!=null)addReview(R.id,s.__i);if(!R.replay&&!R.review){S.hearts=Math.max(0,S.hearts-1);if(S.hearts===MAXH-1)S.heartsAt=Date.now();save()}$('#lHearts span').textContent=S.hearts;
+  R.steps.push(Object.assign({},s,{retry:true,order:null}));
+  setFoot('bad',`${duckSVG('angry','duckmini')}<div><b>${pick(LINES.bad)}</b><span>${md(ex)}</span></div>`,'Понятно','bad');
+  $('#lMain').onclick=()=>{if(S.hearts===0&&!R.replay&&!R.review){outOfHearts();return}next()}}
+function next(){R.i++;if(R.i>=R.steps.length)finishLesson();else renderStep()}
+document.addEventListener('keydown',e=>{if($('#lesson').hidden)return;if(R&&R.keyH)R.keyH(e);if(e.key==='Enter'&&document.activeElement.tagName!=='INPUT'&&document.activeElement.tagName!=='TEXTAREA'&&!$('#lMain').disabled&&document.activeElement!==$('#lMain')){e.preventDefault();$('#lMain').click()}});
+$('#lClose').onclick=()=>{R=null;renderHome();show('home')};
+
+function outOfHearts(){show('result');const m=Math.ceil((HEART_MS-(Date.now()-S.heartsAt))/60000);
+  $('#resBody').parentElement.className='';$('#resBody').className='result fail';
+  $('#resBody').innerHTML=`${duckSVG('worry')}<h1>Жизни кончились</h1><p>Как error budget в Чёрную пятницу. Новая жизнь через ${m} мин. Пройденные уроки можно повторять без жизней, и это тоже продлевает серию.</p><button class="btn" id="resGo">На карту</button>`;
+  $('#resBody .duck').style.width='140px';$('#resGo').onclick=()=>{renderHome();show('home')}}
+
+function finishLesson(extra){
+  const L=R?R.L:LESSONS.l13;const id=R?R.id:'l13';const replay=R?R.replay:!!S.done.l13;const isReview=!!(R&&R.review);
+  const perfect=R?R.mistakes===0&&R.firstTry:true;const before=rankOf(S.xp);ensureDaily();const goalBefore=S.daily.xp>=S.goal;const streakBefore=streakNow();const wasToday=S.lastDay===TODAY();
+  let xp=isReview?L.xp:replay?Math.ceil(L.xp/2):L.xp;if(perfect)xp+=5;if(R&&R.bestCombo>=5)xp+=5;
+  if(!isReview)S.done[id]=true;if(perfect){S.daily.perfect=true}addXP(xp);
+  const acc=R?Math.round((R.total/(R.total+R.mistakes))*100):100;const secs=R?Math.round((Date.now()-R.t0)/1000):extra.secs;
+  show('result');const B=$('#resBody');B.className='result';
+  const tiles=`<div class="tiles"><div class="tile"><small>Опыт</small><b>+${xp}</b></div><div class="tile" style="--tc:var(--ok)"><small>Точность</small><b>${acc}%</b></div><div class="tile" style="--tc:var(--u3)"><small>Время</small><b>${Math.floor(secs/60)}:${String(secs%60).padStart(2,'0')}</b></div></div>`;
+  let banners='';
+  if(!wasToday)banners+=`<div class="banner"><svg><use href="#i-flame"/></svg><div><b>Серия: ${streakNow()} ${plural(streakNow(),'день','дня','дней')}</b>${streakBefore>0?'Не дай ей погаснуть завтра.':'Начало положено. Приходи завтра, утка проверит.'}</div></div>`;
+  if(!goalBefore&&S.daily.xp>=S.goal)banners+=`<div class="banner"><svg><use href="#i-chest"/></svg><div><b>Дневная цель выполнена</b>${S.daily.xp} из ${S.goal} XP. Можно и больше.</div></div>`;
+  if(rankOf(S.xp)>before)banners+=`<div class="banner"><svg><use href="#i-bolt"/></svg><div><b>Новый ранг: ${RANKS[rankOf(S.xp)][1]}</b>Можно смело менять строчку в резюме. Почти.</div></div>`;
+  const title=isReview?'Ошибки разобраны':L.boss?'Смена закрыта':perfect?'Без единой ошибки':'Урок пройден';
+  B.innerHTML=`${duckSVG('happy')}<h1>${title}</h1><p style="margin:0;color:var(--muted)">${esc(L.title)}${replay?' · повтор, половина опыта':''}${perfect?' · +5 XP за чистое прохождение':''}</p>${tiles}${banners}<button class="btn" id="resGo">Продолжить</button>`;
+  B.querySelector('.duck').style.width='140px';$('#resGo').onclick=()=>{R=null;renderHome();show('home')};$('#resGo').focus();
+}
+const plural=(n,a,b,c)=>{const m=n%10,h=n%100;return m===1&&h!==11?a:m>=2&&m<=4&&(h<12||h>14)?b:c};
+
+/* =================== boss: night shift sim =================== */
+const CFG={api:{cap:120,ratio:1,leak:.22,desc:'HTTP API'},auth:{cap:200,ratio:.4,leak:.12,desc:'OAuth'},db:{cap:90,ratio:.6,leak:.06,desc:'PostgreSQL'},worker:{cap:60,ratio:.3,leak:1.5,desc:'очередь задач'}};
+const CURVE=[.35,.27,.2,.16,.15,.18,.25,.35,.45,.53,.6,.66,.7,.68,.65,.67,.7,.78,.85,.94,1,.9,.7,.5];
+const curve=h=>{const i=Math.floor(h)%24,f=h-Math.floor(h);return CURVE[i]*(1-f)+CURVE[(i+1)%24]*f};
+const START=17*60,DUR=300;let G=null,bTimer=null,bWorker=null,bWait=false;
+const mkPod=(n,st)=>({name:`${n}-${rid()}`,svc:n,status:st,timer:st==='Creating'?3:0,mem:8+Math.random()*15,restarts:0,age:0,fault:false,oom:false});
+const bClockStr=()=>{const a=START+G.t;return String(Math.floor(a/60)%24).padStart(2,'0')+':'+String(a%60).padStart(2,'0')};
+function startBoss(){
+  G={t:0,credits:150,budget:100,rps:0,success:1,lat:0,spike:0,over:false,svc:{},paging:false,minSucc:1,t0:Date.now()};
+  for(const[n,r]of Object.entries({api:2,auth:1,db:2,worker:1})){G.svc[n]={name:n,replicas:r,pods:[],util:0,queue:0,load:0};for(let i=0;i<r;i++)G.svc[n].pods.push(mkPod(n,'Running'))}
+  $('#bSvcs').innerHTML='';$('#bEvents').innerHTML='';$('#bOut').innerHTML='';$('#bSout').innerHTML='';
+  $('#bCode').value=S.code||'// Твой код из уроков появится здесь.\nfor (const s of cluster.services) {\n  \n}\n';
+  bOut('Ночная смена, кластер prod. Сейчас 17:00, пик трафика около 20:00.\nДержи успешность выше 99%, иначе тает error budget. Поды стоят денег.\nКоманды: kubectl get pods | get deploy | top pods | logs | describe | delete pod | scale\nВо вкладке «Скрипт» лежит твой код из уроков. Запусти его.','d');
+  bEvent('info','Смена началась. Удачи. Утка рядом.');stopScript();show('boss');bSpeed(3);bRender();
+}
+function bEvent(k,m){const d=document.createElement('div');d.className='ev '+k;d.innerHTML=`<time>${bClockStr()}</time><span></span>`;d.lastChild.textContent=m;const b=$('#bEvents');b.prepend(d);while(b.children.length>60)b.lastChild.remove()}
+function bOut(t,c){line($('#bOut'),t,c)}
+function sLog(t,c){const o=$('#bSout');const d=document.createElement('div');if(c)d.style.color='#ff7b7f';d.textContent=`[${bClockStr()}] ${t}`;o.append(d);while(o.children.length>150)o.firstChild.remove();o.scrollTop=o.scrollHeight}
+function bRecon(s){const act=s.pods.filter(p=>p.status!=='Terminating');while(act.length<s.replicas){const p=mkPod(s.name,'Creating');s.pods.push(p);act.push(p)}
+  if(act.length>s.replicas){const rk={CrashLoopBackOff:0,Creating:1,Running:2};act.sort((a,b)=>rk[a.status]-rk[b.status]);act.slice(0,act.length-s.replicas).forEach(p=>{p.status='Terminating';p.timer=1})}}
+function bFault(n){const run=G.svc[n].pods.filter(p=>p.status==='Running');if(!run.length)return;const p=run[Math.floor(Math.random()*run.length)];p.status='CrashLoopBackOff';p.fault=true;p.timer=3;p.restarts++;bEvent('bad',`${p.name}: CrashLoopBackOff после деплоя`)}
+function bScale(n,r,src){const s=G.svc[n];if(!s)return`сервис "${n}" не найден`;r=Math.round(+r);if(!(r>=1&&r<=12))return'replicas от 1 до 12';if(r===s.replicas)return null;bEvent('info',`deployment/${n}: ${s.replicas} → ${r}${src==='s'?' (скрипт)':''}`);s.replicas=r;bRecon(s);bRender();return null}
+function bFind(n){for(const s of Object.values(G.svc)){const p=s.pods.find(p=>p.name===n);if(p)return[s,p]}return[]}
+function bDel(n,src){const[s,p]=bFind(n);if(!p)return`pod "${n}" не найден`;if(p.status==='Terminating')return null;p.status='Terminating';p.timer=1;bRecon(s);bEvent('info',`pod ${n} deleted${src==='s'?' (скрипт)':''}`);bRender();return null}
+function bTick(){
+  if(G.over)return;G.t++;const h=(START+G.t)/60;
+  if(G.t===4)bFault('auth');else if(Math.random()<.008)bFault(Math.random()<.5?'api':'auth');
+  if(G.t>60&&Math.random()<.003){const all=Object.values(G.svc).flatMap(s=>s.pods.filter(p=>p.status==='Running'));const n=Math.min(2,all.length);for(let i=0;i<n;i++){const p=all.splice(Math.floor(Math.random()*all.length),1)[0];p.status='Terminating';p.timer=1}bEvent('bad',`Нода node-${2+Math.floor(Math.random()*3)} NotReady: потеряно подов: ${n}`)}
+  if(G.spike<=0&&G.t>40&&Math.random()<.005){G.spike=25;bEvent('warn','Маркетинг запустил рассылку: трафик +60% на ~25 мин')}
+  const sm=G.spike>0?1.6:1;if(G.spike>0)G.spike--;G.rps=Math.round(320*curve(h)*sm*(.95+Math.random()*.1));
+  for(const s of Object.values(G.svc)){for(const p of s.pods){p.age++;
+      if(p.status==='Creating'){if(--p.timer<=0)p.status='Running'}else if(p.status==='Terminating')p.timer--;
+      else if(p.status==='CrashLoopBackOff'){if(--p.timer<=0){if(p.fault){p.restarts++;p.timer=Math.min(10,3+p.restarts)}else{p.status='Running';p.mem=8}}}
+      else if(p.status==='Running'){p.mem+=CFG[s.name].leak*(.5+Math.random())*(.6+Math.min(s.util,1.5));if(p.mem>=100){p.status='CrashLoopBackOff';p.timer=3;p.restarts++;p.mem=0;p.oom=true;bEvent('bad',`${p.name}: OOMKilled`)}}}
+    s.pods=s.pods.filter(p=>!(p.status==='Terminating'&&p.timer<=0));bRecon(s)}
+  let succ=1;for(const s of Object.values(G.svc)){const c=CFG[s.name];s.load=G.rps*c.ratio;const cap=s.pods.filter(p=>p.status==='Running').length*c.cap;s.util=cap?s.load/cap:(s.load?9.99:0);
+    if(s.name==='worker'){s.queue=Math.max(0,s.queue+s.load-cap);if(s.queue>600)succ*=.97}else succ*=s.load?Math.min(1,cap/s.load):1}
+  G.lat=Math.round(25/(1-Math.min(G.svc.api.util,.97))+20/(1-Math.min(G.svc.db.util,.97)));G.success=succ;G.minSucc=Math.min(G.minSucc,succ);
+  const pods=Object.values(G.svc).reduce((a,s)=>a+s.pods.length,0);G.credits+=G.rps*succ*.008-pods*.12;
+  if(succ<.99)G.budget-=(.99-succ)*40;else G.budget=Math.min(100,G.budget+.03);
+  if(succ<.99&&!G.paging){G.paging=true;bEvent('bad',`PAGER: успешность ${(succ*100).toFixed(1)}% ниже SLO`)}if(succ>=.99&&G.paging){G.paging=false;bEvent('ok','Успешность вернулась выше SLO')}
+  if(bWorker&&!bWait){bWait=true;const snap={time:bClockStr(),minute:G.t,rps:G.rps,success:G.success,credits:+G.credits.toFixed(1),budget:+G.budget.toFixed(1),
+      services:Object.values(G.svc).map(s=>({name:s.name,replicas:s.replicas,running:s.pods.filter(p=>p.status==='Running').length,util:+s.util.toFixed(2),queue:Math.round(s.queue),pods:s.pods.map(p=>({name:p.name,status:p.status,mem:Math.round(p.mem),restarts:p.restarts,age:p.age}))}))};
+    bWorker.postMessage({type:'tick',snap});bWorker.to=setTimeout(()=>{sLog('Скрипт не ответил за 1 с (бесконечный цикл?). Остановлен.',1);stopScript()},1000)}
+  if(G.budget<=0)return bEnd(false,'Error budget исчерпан. Пользователи слишком долго видели ошибки.');
+  if(G.credits<0)return bEnd(false,'Счёт за облако съел весь бюджет. Слишком много подов.');
+  if(G.t>=DUR)return bEnd(true);bRender();
+}
+function startScript(){stopScript();bWorker=new Worker(WORKER_URL);bWait=false;
+  bWorker.onmessage=e=>{const m=e.data;if(m.type==='loaded'){if(m.err){sLog(m.err,1);stopScript()}else{sLog('Скрипт запущен, срабатывает каждую минуту.');$('#bScriptState').textContent='работает';$('#bScriptState').style.color='var(--ok)'}return}
+    if(m.type==='tick'){clearTimeout(bWorker.to);bWait=false;m.logs.forEach(l=>sLog(l));if(m.err)sLog('ERROR: '+m.err,1);
+      for(const c of m.calls){const er=c.t==='scale'?bScale(c.n,c.r,'s'):bDel(c.p,'s');if(er)sLog('ERROR: '+er,1)}}};
+  bWorker.postMessage({type:'load',code:$('#bCode').value});S.code=$('#bCode').value;save()}
+function stopScript(){if(bWorker){clearTimeout(bWorker.to);bWorker.terminate();bWorker=null}bWait=false;$('#bScriptState').textContent='не запущен';$('#bScriptState').style.color=''}
+function bSpeed(sp){clearInterval(bTimer);bTimer=null;if(sp>0)bTimer=setInterval(bTick,1000/sp);document.querySelectorAll('#boss .speed button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.sp===sp))}
+document.querySelectorAll('#boss .speed button').forEach(b=>b.onclick=()=>{if(G&&!G.over)bSpeed(+b.dataset.sp)});
+function bEnd(win,why){G.over=true;bSpeed(0);stopScript();
+  if(win){R=null;finishLesson({secs:Math.round((Date.now()-G.t0)/1000)});const t=document.createElement('p');t.style.margin='0';t.textContent=`Худшая минута смены: ${(G.minSucc*100).toFixed(1)}% успешных. Error budget на финише: ${Math.max(0,G.budget).toFixed(0)}%.`;$('#resBody h1').after(t);return}
+  show('result');const B=$('#resBody');B.className='result fail';
+  B.innerHTML=`${duckSVG('angry')}<h1>Прод упал</h1><p style="margin:0">${esc(why)}</p><p style="margin:0;color:var(--muted)">Продержался до ${bClockStr()}. Жизни за дежурство не снимаются. Совет утки: запусти автоскейлер с cooldown и автохил, а db подними заранее.</p><div style="display:flex;gap:10px"><button class="btn ghost" id="resHome">На карту</button><button class="btn" id="resRetry">Ещё смену</button></div>`;
+  B.querySelector('.duck').style.width='140px';$('#resHome').onclick=()=>{renderHome();show('home')};$('#resRetry').onclick=startBoss}
+$('#bClose').onclick=()=>{G.over=true;bSpeed(0);stopScript();renderHome();show('home')};
+$('#bRun').onclick=startScript;$('#bStop').onclick=()=>{stopScript();sLog('Скрипт остановлен')};
+$('#bCode').onkeydown=e=>{if(e.key==='Tab'){e.preventDefault();e.target.setRangeText('  ',e.target.selectionStart,e.target.selectionEnd,'end')}};
+document.querySelectorAll('[data-bt]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-bt]').forEach(x=>x.setAttribute('aria-selected',x===b));document.querySelectorAll('[data-bp]').forEach(p=>p.hidden=p.dataset.bp!==b.dataset.bt);if(b.dataset.bt==='script')document.querySelector('[data-bp="script"]').style.display='flex'});
+const bHist=[];let bHi=0;
+$('#bIn').onkeydown=e=>{const I=e.target;
+  if(e.key==='Enter'){const v=I.value.trim();I.value='';if(!v)return;bOut('$ '+v,'c');bHist.push(v);bHi=bHist.length;ensureDaily();S.daily.cmds++;save();const r=bCmd(v);if(r)bOut(r[0],r[1]);bRender()}
+  else if(e.key==='ArrowUp'){if(bHi>0){bHi--;I.value=bHist[bHi]}e.preventDefault()}
+  else if(e.key==='Tab'){e.preventDefault();const parts=I.value.split(' '),last=parts.pop();const w=['kubectl','get','pods','deploy','top','logs','describe','delete','pod','scale','--replicas=',...Object.values(G.svc).flatMap(s=>s.pods.map(p=>p.name)),...Object.keys(G.svc).map(n=>'deployment/'+n)];const m=w.filter(x=>x.startsWith(last));if(m.length===1){parts.push(m[0]);I.value=parts.join(' ')+(m[0].endsWith('=')?'':' ')}else if(m.length>1)bOut(m.slice(0,10).join('  '),'d')}};
+function bCmd(line){const a=line.split(/\s+/);if(a[0]==='k')a[0]='kubectl';if(a[0]==='clear'){$('#bOut').innerHTML='';return null}if(a[0]!=='kubectl')return['Здесь работает только kubectl (и clear).','e'];
+  const v=a[1],res=(a[2]||'').toLowerCase();
+  if(v==='get'&&/^po/.test(res))return[[pad('NAME',14)+pad('READY',7)+pad('STATUS',19)+pad('RESTARTS',10)+'AGE'].concat(Object.values(G.svc).flatMap(s=>s.pods.map(p=>pad(p.name,14)+pad(p.status==='Running'?'1/1':'0/1',7)+pad(p.status==='Creating'?'ContainerCreating':p.status,19)+pad(p.restarts,10)+p.age+'m'))).join('\n')];
+  if(v==='get'&&/^deploy/.test(res))return[[pad('NAME',8)+pad('READY',8)+'UTIL'].concat(Object.values(G.svc).map(s=>pad(s.name,8)+pad(s.pods.filter(p=>p.status==='Running').length+'/'+s.replicas,8)+Math.round(s.util*100)+'%')).join('\n')];
+  if(v==='top')return[[pad('NAME',14)+pad('CPU',7)+'MEM'].concat(Object.values(G.svc).flatMap(s=>s.pods.filter(p=>p.status==='Running').map(p=>pad(p.name,14)+pad(Math.min(100,Math.round(s.util*100))+'%',7)+Math.round(p.mem)+'%'))).join('\n')];
+  const pn=/^po/.test(res)?a[3]:a[2];
+  if(v==='logs'){const[s,p]=bFind(pn);if(!p)return[`pods "${pn||''}" not found`,'e'];if(p.fault)return[`panic: env ${s.name==='auth'?'JWT_SIGNING_KEY':'DATABASE_URL'} is empty`,'e'];if(p.oom&&p.age<15)return['WARN heap 97%\n(previous container: OOMKilled, exit 137)','e'];return[`GET /healthz 200 2ms\nheap usage ${Math.round(p.mem)}%`]}
+  if(v==='describe'){const[s,p]=bFind(pn);if(!p)return[`pods "${pn||''}" not found`,'e'];return[`Name: ${p.name}\nStatus: ${p.status}\nRestarts: ${p.restarts}\nMemory: ${Math.round(p.mem)}% of limit\nEvents: ${p.fault?'BackOff restarting failed container':p.oom?'OOMKilling':'Started'}`]}
+  if(v==='delete'){const e=bDel(pn,'t');return e?[e,'e']:[`pod "${pn}" deleted`,'g']}
+  if(v==='scale'){let t=a[2]||'';if(t.includes('/'))t=t.split('/')[1];else if(/^deploy/.test(t))t=a[3]||'';const m=line.match(/--replicas[=\s]+(\d+)/);if(!m)return['укажи --replicas=N','e'];const e=bScale(t,+m[1],'t');return e?[e,'e']:[`deployment.apps/${t} scaled`,'g']}
+  return['Доступно: get pods, get deploy, top pods, logs, describe, delete pod, scale','e']}
+function bRender(){
+  $('#bClock').textContent=bClockStr();const pct=Math.min(100,G.t/DUR*100);$('#bGoal').style.width=pct+'%';$('#bGoalTxt').textContent=Math.round(pct)+'%';
+  $('#bRps').textContent=G.rps+' rps';const sp=G.success*100;$('#bSucc').textContent=(sp>=99.95?'100':sp.toFixed(1))+'%';$('#bSucc').style.color=G.success<.99?'var(--bad)':'';
+  $('#bLat').textContent=G.lat+' ms';$('#bBud').textContent=Math.max(0,G.budget).toFixed(0)+'%';$('#bBud').style.color=G.budget<40?'var(--bad)':'';$('#bCred').textContent=G.credits.toFixed(0);$('#bCred').style.color=G.credits<30?'var(--bad)':'';
+  $('#bPager').hidden=!G.paging;if(G.paging){const w=Object.values(G.svc).sort((a,b)=>b.util-a.util)[0];$('#bPagerTxt').textContent=`PAGER · успешность ${sp.toFixed(1)}% · горячее всего: ${w.name} (util ${Math.round(Math.min(w.util,9.99)*100)}%)`}
+  const box=$('#bSvcs');for(const s of Object.values(G.svc)){let el=box.querySelector(`[data-s="${s.name}"]`);
+    if(!el){el=document.createElement('div');el.className='svc';el.dataset.s=s.name;el.innerHTML=`<header><h4>${s.name}</h4><small>${CFG[s.name].desc}</small><span></span></header><div class="util">util<div class="ub"><div></div></div><b></b></div><div class="pods"></div>`;box.append(el)}
+    const run=s.pods.filter(p=>p.status==='Running').length;el.querySelector('header span').textContent=`${run}/${s.replicas}`+(s.name==='worker'?` · очередь ${Math.round(s.queue)}`:'');
+    el.classList.toggle('hot',s.util>1||!run);const ub=el.querySelector('.ub div');ub.style.width=Math.min(100,s.util*100)+'%';ub.style.background=s.util>1?'var(--bad)':s.util>.8?'var(--flame)':'var(--ok)';
+    el.querySelector('.util b').textContent=(s.util>=9.9?'∞':Math.round(s.util*100))+'%';
+    const pb=el.querySelector('.pods');pb.innerHTML='';for(const p of s.pods){const b=document.createElement('button');b.className='pod '+p.status;b.title=`${p.name} · ${p.status} · mem ${Math.round(p.mem)}%`;b.setAttribute('aria-label',b.title);b.innerHTML=`<span style="height:${Math.min(100,p.mem)}%"></span>`;
+      b.onclick=()=>{document.querySelector('[data-bt="term"]').click();$('#bIn').value=`kubectl logs ${p.name}`;$('#bIn').focus()};pb.append(b)}}
+}
+
+/* =================== onboarding & boot =================== */
+let obGoal=30;
+document.querySelectorAll('#goals button').forEach(b=>b.onclick=()=>{obGoal=+b.dataset.g;document.querySelectorAll('#goals button').forEach(x=>x.setAttribute('aria-pressed',x===b))});
+$('#obGo').onclick=()=>{S.goal=obGoal;S.onboarded=true;save();$('#onboard').hidden=true;renderHome()};
+$('#obDuck').innerHTML=duckSVG('happy');
+ensureDaily();heartsTick();renderHome();show('home');
+if(!S.onboarded)$('#onboard').hidden=false;
+setInterval(()=>{if(!$('#home').hidden){const h=S.hearts;heartsTick();if(S.hearts!==h)renderHome()}},30000);
+</script>

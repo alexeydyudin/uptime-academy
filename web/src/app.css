@@ -1,0 +1,21 @@
+/* ---- проект: база вместо скелета артефакта ---- */
+html,body{margin:0}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+[hidden]{display:none!important}
+img{max-width:100%}
+
+/* ---- аккаунт ---- */
+.acct{border:2px solid var(--line);background:var(--panel);border-radius:12px;padding:6px 12px;font-weight:700;cursor:pointer;color:var(--ink)}
+.acct.avatar{width:36px;height:36px;padding:0;border-radius:50%;background:var(--duck);border-color:var(--duck-d);color:var(--duck-ink)}
+.muted{color:var(--muted);margin:0;font-size:14px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-weight:600;font-size:14px}
+.field input,.field select{font:inherit;color:var(--ink);background:var(--panel2);border:2px solid var(--line);border-radius:12px;padding:10px 12px}
+.field input:focus,.field select:focus{outline:none;border-color:var(--duck-d)}
+.field small{color:var(--muted);font-size:12.5px}
+#acctForm{display:flex;flex-direction:column;gap:12px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.row.end{justify-content:flex-end}
+.err{color:var(--bad);margin:0;font-size:14px}
+.link{background:none;border:0;padding:0;color:var(--u3);font-weight:700;cursor:pointer;text-decoration:underline}
+.switch{text-align:center}

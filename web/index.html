@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Uptime Academy</title>
+  <meta name="description" content="DevOps-тренажёр: терминал, Docker, Kubernetes, CI/CD и ночное дежурство. Пять минут в день с уткой-дежурной.">
+  <meta name="theme-color" content="#f7c234">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&family=Onest:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 2c1 4 6 6 6 12a6 6 0 0 1-12 0c0-3 1.5-5 3-6 0 2 1 3 2 3 0-4-1-6 1-9z" fill="var(--flame)"/><path d="M12 13c1 1.5 3 2.5 3 5a3 3 0 0 1-6 0c0-1.5 1-2.5 3-5z" fill="#ffd166"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 21s-8-5.2-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 5.8-8 11-8 11z" fill="var(--heart)"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z" fill="var(--duck)" stroke="var(--duck-d)" stroke-width="1.2" stroke-linejoin="round"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.5" fill="currentColor"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" fill="none" stroke="currentColor" stroke-width="2.6"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></symbol>
+    <symbol id="i-term" viewBox="0 0 24 24"><path d="m5 7 5 5-5 5M12 18h7" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-pager" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="3" fill="currentColor"/><rect x="6" y="9" width="9" height="4" rx="1" fill="var(--uc,#333)"/><circle cx="17.5" cy="11" r="1.4" fill="var(--uc,#333)"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-chest" viewBox="0 0 24 24"><rect x="3" y="9" width="18" height="11" rx="2" fill="#c98a3a"/><path d="M3 11a9 5 0 0 1 18 0" fill="#e2a24f"/><rect x="10.5" y="11" width="3" height="4" rx="1" fill="var(--duck)"/></symbol>
+  </defs>
+</svg>
+
+<!-- HOME -->
+<div id="home">
+  <div class="top"><div class="wrap">
+    <div class="logo">Uptime<span>Academy</span></div>
+    <div class="chip" id="cStreak" title="Серия дней"><svg><use href="#i-flame"/></svg><span>0</span></div>
+    <div class="chip" id="cXp" title="Опыт"><svg><use href="#i-bolt"/></svg><span>0</span></div>
+    <div class="chip" id="cHearts" title="Жизни"><svg><use href="#i-heart"/></svg><span>5</span></div>
+    <button class="acct" id="acctBtn">Войти</button>
+  </div></div>
+  <div class="wrap home">
+    <div id="path"></div>
+    <aside class="side">
+      <div class="card">
+        <div class="duckcard"><div id="homeDuck"></div><div class="bubble" id="duckSay">…</div></div>
+        <div class="rank"><span>Ранг: <b id="rankName">Стажёр</b></span><span id="rankNext"></span></div>
+        <div class="bar"><div id="rankBar" style="width:0"></div></div>
+      </div>
+      <div class="card">
+        <h3>Неделя</h3>
+        <div class="week" id="week"></div>
+        <div class="goalrow"><span>Дневная цель</span><b id="goalTxt">0 / 30 XP</b></div>
+        <div class="bar ok"><div id="goalBar" style="width:0"></div></div>
+      </div>
+      <div class="card" id="reviewCard" hidden></div>
+      <div class="card">
+        <h3>Квесты дня</h3>
+        <div class="quests" id="quests"></div>
+      </div>
+      <div class="card" id="leagueCard"></div>
+    </aside>
+  </div>
+</div>
+
+<!-- LESSON -->
+<div id="lesson" hidden>
+  <div class="lesson">
+    <div class="lbar">
+      <button class="x" id="lClose" aria-label="Выйти из урока"><svg><use href="#i-x"/></svg></button>
+      <div class="lprog"><div id="lProg" style="width:0"></div></div>
+      <span class="combo" id="lCombo"></span>
+      <div class="chip" id="lHearts"><svg><use href="#i-heart"/></svg><span>5</span></div>
+    </div>
+    <div class="lbody" id="lBody"></div>
+  </div>
+  <div class="lfoot" id="lFoot"><div class="in">
+    <div class="msg" id="lMsg"></div>
+    <button class="btn ghost" id="lHint" hidden>Подсказка</button>
+    <button class="btn" id="lMain">Проверить</button>
+  </div></div>
+</div>
+
+<!-- RESULT -->
+<div id="result" hidden><div class="result" id="resBody"></div></div>
+
+<!-- BOSS -->
+<div id="boss" hidden>
+  <div class="boss">
+    <div class="bhead">
+      <button class="x" id="bClose" aria-label="Сдаться и выйти"><svg><use href="#i-x"/></svg></button>
+      <h2>Ночная смена</h2>
+      <div class="bclock" id="bClock">17:00</div>
+      <div class="speed" role="group" aria-label="Скорость">
+        <button data-sp="0" aria-pressed="false">❚❚</button><button data-sp="1" aria-pressed="false">1×</button><button data-sp="3" aria-pressed="true">3×</button><button data-sp="8" aria-pressed="false">8×</button>
+      </div>
+      <div class="goalbar"><span>Продержись до 22:00</span><div class="bar"><div id="bGoal" style="width:0"></div></div><span id="bGoalTxt">0%</span></div>
+      <div class="pager" id="bPager" hidden><i></i><span id="bPagerTxt"></span></div>
+    </div>
+    <div class="bgrid">
+      <div class="bcol">
+        <div class="stats">
+          <div class="stat"><label>Трафик</label><output id="bRps"></output></div>
+          <div class="stat"><label>Успешность</label><output id="bSucc"></output></div>
+          <div class="stat"><label>p95 api</label><output id="bLat"></output></div>
+          <div class="stat"><label>Error budget</label><output id="bBud"></output></div>
+          <div class="stat"><label>Кредиты</label><output id="bCred"></output></div>
+        </div>
+        <div class="svcs" id="bSvcs"></div>
+        <div class="events" id="bEvents"></div>
+      </div>
+      <div class="bpanel">
+        <div class="btabs" role="tablist"><button role="tab" data-bt="term" aria-selected="true">Терминал</button><button role="tab" data-bt="script" aria-selected="false">Скрипт</button></div>
+        <div data-bp="term" class="term"><div class="tout" id="bOut" style="height:380px"></div><label class="tin" for="bIn"><b>oncall$</b><input id="bIn" autocomplete="off" spellcheck="false" placeholder="kubectl get pods"></label></div>
+        <div data-bp="script" hidden style="display:flex;flex-direction:column;gap:10px">
+          <textarea class="code" id="bCode" spellcheck="false" style="height:300px"></textarea>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="btn ok" id="bRun">Запустить</button><button class="btn ghost" id="bStop">Стоп</button><span id="bScriptState" style="font-size:13px;color:var(--muted)">не запущен</span></div>
+          <div class="tout" id="bSout" style="height:110px;background:var(--term);color:var(--term-ink);border-radius:12px;white-space:pre-wrap"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="onboard" hidden><div class="card">
+  <div class="duckcard"><div id="obDuck"></div><div class="bubble">Я утка-дежурная. Буду учить тебя DevOps и напоминать о прод-окружении, даже когда ты этого не хочешь.</div></div>
+  <h2>Сколько времени в день?</h2>
+  <div class="goals" id="goals">
+    <button data-g="20" aria-pressed="false">Спокойно <span>5 мин · 20 XP</span></button>
+    <button data-g="30" aria-pressed="true">Нормально <span>10 мин · 30 XP</span></button>
+    <button data-g="50" aria-pressed="false">Серьёзно <span>15 мин · 50 XP</span></button>
+    <button data-g="80" aria-pressed="false">Как на дежурстве <span>20 мин · 80 XP</span></button>
+  </div>
+  <button class="btn" id="obGo">Поехали</button>
+</div></div>
+<div class="toast" id="toast" hidden></div>
+
+<div class="modal" id="acctModal" hidden><div class="card" id="acctBody"></div></div>
+
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>

@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: uptime
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-uptime}
+      POSTGRES_DB: uptime
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U uptime"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  api:
+    build: ./api
+    environment:
+      DATABASE_URL: postgres://uptime:${POSTGRES_PASSWORD:-uptime}@db:5432/uptime
+      JWT_SECRET: ${JWT_SECRET:?задай JWT_SECRET в .env}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-mailto:admin@example.com}
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      DAILY_XP_CAP: ${DAILY_XP_CAP:-800}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  web:
+    build: ./web
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  pgdata:
