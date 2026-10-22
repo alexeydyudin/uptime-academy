@@ -1,6 +1,8 @@
 import type { FastifyInstance } from 'fastify';
 import { pool } from '../db.js';
 import { mergeProgress, type Progress } from '../lib/merge.js';
+import { ProgressSchema } from '../lib/progress-schema.js';
+import { LIMITS, byUser } from '../security.js';
 
 const MAX_STATE_BYTES = 200_000;
 const isDay = (v: unknown): v is string => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v);
@@ -15,10 +17,15 @@ export async function progressRoutes(app: FastifyInstance) {
   });
 
   /** Клиент шлёт свой стейт, сервер сливает его с сохранённым и возвращает итог. */
-  app.put('/progress', { preHandler: app.requireUser }, async (req, reply) => {
+  app.put('/progress', { preHandler: app.requireUser, config: { rateLimit: { ...LIMITS.progress, keyGenerator: byUser } } }, async (req, reply) => {
     const body = req.body as { state?: Progress } | undefined;
     if (!body?.state || typeof body.state !== 'object') return reply.code(400).send({ error: 'Нет state' });
     if (JSON.stringify(body.state).length > MAX_STATE_BYTES) return reply.code(413).send({ error: 'Слишком большой state' });
+    const parsed = ProgressSchema.safeParse(body.state);
+    if (!parsed.success) {
+      const i = parsed.error.issues[0];
+      return reply.code(400).send({ error: `Некорректный прогресс: ${i.path.join('.') || 'state'}` });
+    }
 
     const client = await pool.connect();
     try {
@@ -27,7 +34,7 @@ export async function progressRoutes(app: FastifyInstance) {
         'select state from progress where user_id = $1 for update',
         [req.user.uid],
       );
-      const merged = mergeProgress(cur.rows[0]?.state ?? null, body.state);
+      const merged = mergeProgress(cur.rows[0]?.state ?? null, parsed.data as Progress);
       await client.query(
         `insert into progress (user_id, state, xp, streak, last_day, updated_at)
          values ($1, $2, $3, $4, $5, now())
