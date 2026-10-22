@@ -92,9 +92,17 @@ export function sh1(W,line){
   case 'docker':return docker(W,a.slice(1),err,r);
   case 'kubectl':return kubectl(W,a.slice(1),err,r,line);
   case 'sudo':{if(!a[1])return err('usage: sudo <команда>');W.sudo=true;try{return sh1(W,line.trim().replace(/^sudo\s+/,''))}finally{W.sudo=false}}
-  default:return err(REAL_CMDS.includes(cmd)?`${cmd}: в тренажёре этой команды нет. В настоящем Linux она есть, но в уроках не понадобится.`:`${cmd}: command not found. Введи help`);
+  default:{const tip=typoTip(line,cmd);if(tip)return err(`${cmd}: command not found. ${tip}`)}
+    return err(REAL_CMDS.includes(cmd)?`${cmd}: в тренажёре этой команды нет. В настоящем Linux она есть, но в уроках не понадобится.`:`${cmd}: command not found. Введи help`);
   }
 }
+/** Частые промахи новичков: русская раскладка и заглавные буквы. */
+const RU='ёйцукенгшщзхъфывапролджэячсмитьбю.ЁЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ,';
+const EN="`qwertyuiop[]asdfghjkl;'zxcvbnm,./~QWERTYUIOP{}ASDFGHJKL:\"ZXCVBNM<>?";
+export function typoTip(line,cmd){
+  if(/[а-яё]/i.test(cmd)){const fixed=line.trim().split('').map(c=>{const i=RU.indexOf(c);return i<0?c:EN[i]}).join('');return `Похоже, включена русская раскладка. Ты имел в виду: ${fixed}`}
+  if(cmd!==cmd.toLowerCase())return `Linux различает регистр, команды пишутся маленькими буквами: ${cmd.toLowerCase()}`;
+  return null}
 export function shExt(W,line,a,cmd,err,r){
   if(W.tf&&W.tf.await){W.tf.await=false;if(cmd==='yes')return tfApply(W,r);return err('Error: Apply cancelled.\n(Terraform ждал ответа yes. Запусти terraform apply ещё раз.)')}
   if(cmd==='echo'&&/\$\?/.test(line)){const code=W.lastExit==null?0:W.lastExit;if(code===1&&W.f.healthDown)W.f.sawExit1=true;r.out=line.replace(/^\s*echo\s+/,'').replace(/["']/g,'').replace(/\$\?/g,String(code));return r}

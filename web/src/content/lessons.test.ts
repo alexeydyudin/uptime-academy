@@ -132,6 +132,12 @@ describe('терминал', () => {
     expect(sh(W, 'vim app.log').out).toMatch(/в тренажёре этой команды нет/);
     expect(sh(W, 'foobar').out).toMatch(/command not found/);
   });
+  it('подсказывает про русскую раскладку и регистр', () => {
+    const W = LESSONS.l1.setup!();
+    expect(sh(W, 'зцв').out).toContain('Ты имел в виду: pwd');
+    expect(sh(W, 'сфе тщеуыюече').out).toContain('cat notes.txt');
+    expect(sh(W, 'PWD').out).toContain('маленькими буквами: pwd');
+  });
   it('трубы, цепочки и ; работают', () => {
     const W = LESSONS.l2.setup!();
     expect(sh(W, 'grep ERROR app.log | wc -l').out).toBe('3');
