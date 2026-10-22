@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { pool } from '../db.js';
 import { publicKey, sendToUser } from '../lib/push.js';
+import { LIMITS, byUser } from '../security.js';
 
 const Sub = z.object({
   endpoint: z.string().url().max(1000),
@@ -30,7 +31,7 @@ export async function pushRoutes(app: FastifyInstance) {
     return { ok: true };
   });
 
-  app.post('/push/test', { preHandler: app.requireUser }, async (req) => {
+  app.post('/push/test', { preHandler: app.requireUser, config: { rateLimit: { ...LIMITS.pushTest, keyGenerator: byUser } } }, async (req) => {
     const sent = await sendToUser(req.user.uid, {
       title: 'Утка-дежурная на связи',
       body: 'Если ты это читаешь, уведомления работают. Теперь тебе от меня не спрятаться.',

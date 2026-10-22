@@ -3,6 +3,7 @@ import fastifyStatic from '@fastify/static';
 import Fastify from 'fastify';
 import { jobRoutes } from './routes/jobs.js';
 import { authPlugin } from './auth.js';
+import { securityPlugin } from './security.js';
 import { config } from './config.js';
 import { migrate, pool } from './db.js';
 import { startJobs } from './jobs/index.js';
@@ -19,6 +20,7 @@ export async function buildApp() {
     trustProxy: true,
   });
   await app.register(authPlugin);
+  await app.register(securityPlugin);
   await app.register(
     async (api) => {
       // Render дёргает health каждые 5 секунд: не засоряем лог

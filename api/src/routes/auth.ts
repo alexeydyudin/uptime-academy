@@ -4,15 +4,25 @@ import { z } from 'zod';
 import { clearSession, setSession } from '../auth.js';
 import { config } from '../config.js';
 import { pool } from '../db.js';
+import { LIMITS, byUser } from '../security.js';
 
 const Register = z.object({
   email: z.string().trim().toLowerCase().email().max(200),
   password: z.string().min(8, 'Пароль от 8 символов').max(200),
-  name: z.string().trim().min(2, 'Имя от 2 символов').max(32),
+  name: z
+    .string()
+    .trim()
+    .min(2, 'Имя от 2 символов')
+    .max(32, 'Имя до 32 символов')
+    .regex(/^[\p{L}\p{N} _.\-]+$/u, 'В имени можно буквы, цифры, пробел, точку, дефис и подчёркивание'),
 });
-const Login = z.object({ email: z.string().trim().toLowerCase(), password: z.string() });
+const Login = z.object({ email: z.string().trim().toLowerCase().max(200), password: z.string().max(200) });
+
+// Хеш-пустышка: проверяем пароль даже для несуществующей почты, чтобы по времени ответа
+// нельзя было узнать, зарегистрирован ли адрес.
+const DUMMY_HASH = bcrypt.hashSync('uptime-academy-dummy-password', 10);
 const Settings = z.object({
-  name: z.string().trim().min(2).max(32).optional(),
+  name: z.string().trim().min(2).max(32).regex(/^[\p{L}\p{N} _.\-]+$/u).optional(),
   tz: z.string().max(64).optional(),
   remindHour: z.number().int().min(0).max(23).optional(),
 });
@@ -27,7 +37,7 @@ const validTz = (tz: string) => {
 };
 
 export async function authRoutes(app: FastifyInstance) {
-  app.post('/auth/register', async (req, reply) => {
+  app.post('/auth/register', { config: { rateLimit: LIMITS.register } }, async (req, reply) => {
     const body = Register.safeParse(req.body);
     if (!body.success) return reply.code(400).send({ error: body.error.issues[0].message });
     const hash = await bcrypt.hash(body.data.password, 10);
@@ -46,7 +56,7 @@ export async function authRoutes(app: FastifyInstance) {
     }
   });
 
-  app.post('/auth/login', async (req, reply) => {
+  app.post('/auth/login', { config: { rateLimit: LIMITS.login } }, async (req, reply) => {
     const body = Login.safeParse(req.body);
     if (!body.success) return reply.code(400).send({ error: 'Укажи почту и пароль' });
     const r = await pool.query<{ id: number; name: string; pass_hash: string }>(
@@ -54,7 +64,8 @@ export async function authRoutes(app: FastifyInstance) {
       [body.data.email],
     );
     const u = r.rows[0];
-    if (!u || !(await bcrypt.compare(body.data.password, u.pass_hash)))
+    const ok = await bcrypt.compare(body.data.password, u?.pass_hash ?? DUMMY_HASH);
+    if (!u || !ok)
       return reply.code(401).send({ error: 'Неверная почта или пароль' });
     setSession(app, reply, Number(u.id));
     return { id: Number(u.id), name: u.name };
@@ -77,7 +88,7 @@ export async function authRoutes(app: FastifyInstance) {
     return { ...me, isAdmin: config.adminEmails.includes(String(me.email).toLowerCase()) };
   });
 
-  app.patch('/me', { preHandler: app.requireUser }, async (req, reply) => {
+  app.patch('/me', { preHandler: app.requireUser, config: { rateLimit: { ...LIMITS.progress, keyGenerator: byUser } } }, async (req, reply) => {
     const body = Settings.safeParse(req.body);
     if (!body.success) return reply.code(400).send({ error: 'Некорректные настройки' });
     const { name, tz, remindHour } = body.data;
