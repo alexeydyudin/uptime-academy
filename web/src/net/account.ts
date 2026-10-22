@@ -47,11 +47,12 @@ function renderModal(mode: 'login' | 'register'): void {
       renderHome();
       toast('Дневная цель сохранена');
     };
-    el('remindHour').onchange = async (e) => {
-      await api.patch('/api/me', { remindHour: Number((e.target as HTMLSelectElement).value) });
-      await reloadMe();
-      toast('Время напоминаний сохранено');
-    };
+    el('remindHour').onchange = (e) =>
+      run(async () => {
+        await api.patch('/api/me', { remindHour: Number((e.target as HTMLSelectElement).value) });
+        await reloadMe();
+        toast('Время напоминаний сохранено');
+      });
     const on = document.getElementById('pushOn');
     if (on) on.onclick = () => run(async () => { await enablePush(); await reloadMe(); toast('Уведомления включены'); });
     const off = document.getElementById('pushOff');
@@ -82,6 +83,11 @@ function renderModal(mode: 'login' | 'register'): void {
     const pass = el<HTMLInputElement>('fPass').value;
     const err = el<HTMLParagraphElement>('fErr');
     err.hidden = true;
+    if (!email.trim() || !pass) {
+      err.textContent = 'Введи почту и пароль';
+      err.hidden = false;
+      return;
+    }
     try {
       if (reg) await register(el<HTMLInputElement>('fName').value, email, pass);
       else await login(email, pass);
@@ -128,6 +134,9 @@ export function initAccount(): void {
       open();
     };
   }
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !el('acctModal').hidden) close();
+  });
   el('acctModal').onclick = (e) => {
     if (e.target === e.currentTarget) close();
   };

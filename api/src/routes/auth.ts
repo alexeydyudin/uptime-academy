@@ -7,7 +7,7 @@ import { pool } from '../db.js';
 import { LIMITS, byUser } from '../security.js';
 
 const Register = z.object({
-  email: z.string().trim().toLowerCase().email().max(200),
+  email: z.string().trim().toLowerCase().email('Проверь адрес почты').max(200),
   password: z.string().min(8, 'Пароль от 8 символов').max(200),
   name: z
     .string()
