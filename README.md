@@ -8,7 +8,9 @@ DevOps-тренажёр в духе Duolingo: путь от терминала �
 
 Каждый урок: короткая лекция (2–3 карточки) → задания-цели в терминале или редакторе конфигов с лестницей из трёх подсказок → разбор вывода. В конце каждой ступени — проект для портфолио, который делается вживую.
 
-Уроки описаны в `web/src/game/curriculum.ts` (`LESSONS`, `UNITS`), симулятор команд — в `web/src/game/shell.ts`.
+Уроки — в `web/src/content/lessons/<ступень>.ts`, карта — в `web/src/content/units.ts`, миры уроков — в `web/src/content/worlds.ts`. Симулятор команд — `web/src/engine/shell/` (по доменам: linux, git, docker, k8s, iac, observability, security). Типы — `web/src/engine/types.ts`: контент проверяется компилятором строго.
+
+Каждый урок автоматически проходится эталонным решением и альтернативными командами в `web/src/content/lessons.test.ts` (`cd web && npm test`). Новый урок без прохождения в тестах не вливаем.
 
 ## Бесплатный деплой
 
@@ -50,8 +52,10 @@ cd web && npm run build                 # tsc + vite build
 
 ```
 web/                     Vite + TypeScript, без фреймворка
-  src/game/              игра: state, curriculum (уроки), shell (фейковые bash/docker/kubectl/git/gh/promql),
-                         ui (карта, уроки), boss (симуляция дежурства), scriptWorker (код игрока в Web Worker)
+  src/engine/            движок: types (мир, урок, шаг), world, shell/ (симулятор команд по доменам)
+  src/content/           контент: units (карта), lessons/ (уроки по ступеням), worlds (миры уроков)
+  src/game/              интерфейс: state, progress, ui (карта, уроки), boss (ночная смена), duck, boot,
+                         scriptWorker (код игрока в Web Worker)
   src/net/               сеть: api-клиент, sync (прогресс и лига), push, account (вход и настройки)
   public/sw.js           service worker: показывает push от утки
 api/                     Fastify + PostgreSQL
@@ -76,6 +80,6 @@ api/                     Fastify + PostgreSQL
 
 ## Что дальше
 
-- Перевести `src/game/*` с `@ts-nocheck` на строгие типы: модули перенесены из однофайловой версии как есть.
+- Снять `@ts-nocheck` с `src/engine` и `src/game` (контент уже типизирован строго).
 - Rate limit на `/api/auth/*` (например `@fastify/rate-limit`) и сброс пароля по почте.
 - Повторение ошибок по кривой забывания на сервере, юнит Terraform.
