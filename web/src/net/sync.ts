@@ -1,4 +1,4 @@
-import { HOOKS, S, save, toast } from '../game/state';
+import { HOOKS, S, resetLocal, save, toast } from '../game/state';
 import { renderHome } from '../game/ui';
 import { api, type League, type Me } from './api';
 
@@ -84,8 +84,18 @@ function detachHooks(): void {
 }
 
 async function start(): Promise<void> {
+  // Прогресс в браузере принадлежит другому аккаунту — не переносим его, начинаем с серверного.
+  // Прогресс без владельца (играл без входа) переносится в аккаунт: так задумано.
+  const owner = (S as { owner?: number }).owner;
+  if (owner != null && me && owner !== me.id) resetLocal();
   attachHooks();
   await pushProgress();
+  if (me) {
+    (S as { owner?: number }).owner = me.id;
+    applying = true;
+    save();
+    applying = false;
+  }
   await refreshLeague();
   clearInterval(leagueTimer);
   leagueTimer = setInterval(refreshLeague, 5 * 60_000);
@@ -122,6 +132,7 @@ export async function logout(): Promise<void> {
   await api.post('/api/auth/logout');
   me = null;
   detachHooks();
+  resetLocal();
   renderHome();
   emit();
 }
