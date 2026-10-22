@@ -1,24 +1,25 @@
 // @ts-nocheck — перенесено из однофайловой версии; типизация по мере рефакторинга
 import { S, save, ensureDaily, $, esc } from './state';
 import { duckSVG } from './duck';
-import { rid } from './curriculum';
-import { pad } from './shell';
-import { show, renderHome, line, finishBoss } from './ui';
+import { rid } from '../engine/world';
+import { pad } from '../engine/shell/util';
+import { show, renderHome, finishBoss, line } from './ui';
 import { makeWorker } from './worker';
-/* boss: night shift sim */
+
 export const CFG={api:{cap:120,ratio:1,leak:.22,desc:'HTTP API'},auth:{cap:200,ratio:.4,leak:.12,desc:'OAuth'},db:{cap:90,ratio:.6,leak:.06,desc:'PostgreSQL'},worker:{cap:60,ratio:.3,leak:1.5,desc:'очередь задач'}};
 export const CURVE=[.35,.27,.2,.16,.15,.18,.25,.35,.45,.53,.6,.66,.7,.68,.65,.67,.7,.78,.85,.94,1,.9,.7,.5];
 export const curve=h=>{const i=Math.floor(h)%24,f=h-Math.floor(h);return CURVE[i]*(1-f)+CURVE[(i+1)%24]*f};
-export const START=17*60,DUR=300;export let G=null,bTimer=null,bWorker=null,bWait=false;
+export const START=17*60,DUR=300;
+export let G=null,bTimer=null,bWorker=null,bWait=false;
 export const mkPod=(n,st)=>({name:`${n}-${rid()}`,svc:n,status:st,timer:st==='Creating'?3:0,mem:8+Math.random()*15,restarts:0,age:0,fault:false,oom:false});
 export const bClockStr=()=>{const a=START+G.t;return String(Math.floor(a/60)%24).padStart(2,'0')+':'+String(a%60).padStart(2,'0')};
 export function startBoss(){
   G={t:0,credits:150,budget:100,rps:0,success:1,lat:0,spike:0,over:false,svc:{},paging:false,minSucc:1,t0:Date.now()};
-  for(const[n,r]of Object.entries({api:2,auth:1,db:2,worker:1})){G.svc[n]={name:n,replicas:r,pods:[],util:0,queue:0,load:0};for(let i=0;i<r;i++)G.svc[n].pods.push(mkPod(n,'Running'))}
+  for(const[n,r]of Object.entries({api:2,auth:2,db:2,worker:1})){G.svc[n]={name:n,replicas:r,pods:[],util:0,queue:0,load:0};for(let i=0;i<r;i++)G.svc[n].pods.push(mkPod(n,'Running'))}
   $('#bSvcs').innerHTML='';$('#bEvents').innerHTML='';$('#bOut').innerHTML='';$('#bSout').innerHTML='';
   $('#bCode').value=S.code||'// Твой код из уроков появится здесь.\nfor (const s of cluster.services) {\n  \n}\n';
   bOut('Ночная смена, кластер prod. Сейчас 17:00, пик трафика около 20:00.\nДержи успешность выше 99%, иначе тает error budget. Поды стоят денег.\nКоманды: kubectl get pods | get deploy | top pods | logs | describe | delete pod | scale\nВо вкладке «Скрипт» лежит твой код из уроков. Запусти его.','d');
-  bEvent('info','Смена началась. Удачи. Утка рядом.');stopScript();show('boss');bSpeed(3);bRender();
+  bEvent('info','Смена началась. Удачи. Утка рядом.');stopScript();show('boss');bSpeed(1);bRender();
 }
 export function bEvent(k,m){const d=document.createElement('div');d.className='ev '+k;d.innerHTML=`<time>${bClockStr()}</time><span></span>`;d.lastChild.textContent=m;const b=$('#bEvents');b.prepend(d);while(b.children.length>60)b.lastChild.remove()}
 export function bOut(t,c){line($('#bOut'),t,c)}
@@ -31,7 +32,7 @@ export function bFind(n){for(const s of Object.values(G.svc)){const p=s.pods.fin
 export function bDel(n,src){const[s,p]=bFind(n);if(!p)return`pod "${n}" не найден`;if(p.status==='Terminating')return null;p.status='Terminating';p.timer=1;bRecon(s);bEvent('info',`pod ${n} deleted${src==='s'?' (скрипт)':''}`);bRender();return null}
 export function bTick(){
   if(G.over)return;G.t++;const h=(START+G.t)/60;
-  if(G.t===4)bFault('auth');else if(Math.random()<.008)bFault(Math.random()<.5?'api':'auth');
+  if(G.t===10)bFault('auth');else if(Math.random()<.008)bFault(Math.random()<.5?'api':'auth');
   if(G.t>60&&Math.random()<.003){const all=Object.values(G.svc).flatMap(s=>s.pods.filter(p=>p.status==='Running'));const n=Math.min(2,all.length);for(let i=0;i<n;i++){const p=all.splice(Math.floor(Math.random()*all.length),1)[0];p.status='Terminating';p.timer=1}bEvent('bad',`Нода node-${2+Math.floor(Math.random()*3)} NotReady: потеряно подов: ${n}`)}
   if(G.spike<=0&&G.t>40&&Math.random()<.005){G.spike=25;bEvent('warn','Маркетинг запустил рассылку: трафик +60% на ~25 мин')}
   const sm=G.spike>0?1.6:1;if(G.spike>0)G.spike--;G.rps=Math.round(320*curve(h)*sm*(.95+Math.random()*.1));
@@ -44,7 +45,7 @@ export function bTick(){
     if(s.name==='worker'){s.queue=Math.max(0,s.queue+s.load-cap);if(s.queue>600)succ*=.97}else succ*=s.load?Math.min(1,cap/s.load):1}
   G.lat=Math.round(25/(1-Math.min(G.svc.api.util,.97))+20/(1-Math.min(G.svc.db.util,.97)));G.success=succ;G.minSucc=Math.min(G.minSucc,succ);
   const pods=Object.values(G.svc).reduce((a,s)=>a+s.pods.length,0);G.credits+=G.rps*succ*.008-pods*.12;
-  if(succ<.99)G.budget-=(.99-succ)*40;else G.budget=Math.min(100,G.budget+.03);
+  if(succ<.99)G.budget-=(.99-succ)*10;else G.budget=Math.min(100,G.budget+.03);
   if(succ<.99&&!G.paging){G.paging=true;bEvent('bad',`PAGER: успешность ${(succ*100).toFixed(1)}% ниже SLO`)}if(succ>=.99&&G.paging){G.paging=false;bEvent('ok','Успешность вернулась выше SLO')}
   if(bWorker&&!bWait){bWait=true;const snap={time:bClockStr(),minute:G.t,rps:G.rps,success:G.success,credits:+G.credits.toFixed(1),budget:+G.budget.toFixed(1),
       services:Object.values(G.svc).map(s=>({name:s.name,replicas:s.replicas,running:s.pods.filter(p=>p.status==='Running').length,util:+s.util.toFixed(2),queue:Math.round(s.queue),pods:s.pods.map(p=>({name:p.name,status:p.status,mem:Math.round(p.mem),restarts:p.restarts,age:p.age}))}))};
@@ -67,10 +68,12 @@ export function bEnd(win,why){G.over=true;bSpeed(0);stopScript();
   B.innerHTML=`${duckSVG('angry')}<h1>Прод упал</h1><p style="margin:0">${esc(why)}</p><p style="margin:0;color:var(--muted)">Продержался до ${bClockStr()}. Жизни за дежурство не снимаются. Совет утки: запусти автоскейлер с cooldown и автохил, а db подними заранее.</p><div style="display:flex;gap:10px"><button class="btn ghost" id="resHome">На карту</button><button class="btn" id="resRetry">Ещё смену</button></div>`;
   B.querySelector('.duck').style.width='140px';$('#resHome').onclick=()=>{renderHome();show('home')};$('#resRetry').onclick=startBoss}
 $('#bClose').onclick=()=>{G.over=true;bSpeed(0);stopScript();renderHome();show('home')};
-$('#bRun').onclick=startScript;$('#bStop').onclick=()=>{stopScript();sLog('Скрипт остановлен')};
+$('#bRun').onclick=startScript;
+$('#bStop').onclick=()=>{stopScript();sLog('Скрипт остановлен')};
 $('#bCode').onkeydown=e=>{if(e.key==='Tab'){e.preventDefault();e.target.setRangeText('  ',e.target.selectionStart,e.target.selectionEnd,'end')}};
 document.querySelectorAll('[data-bt]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-bt]').forEach(x=>x.setAttribute('aria-selected',x===b));document.querySelectorAll('[data-bp]').forEach(p=>p.hidden=p.dataset.bp!==b.dataset.bt);if(b.dataset.bt==='script')document.querySelector('[data-bp="script"]').style.display='flex'});
-export const bHist=[];export let bHi=0;
+export const bHist=[];
+export let bHi=0;
 $('#bIn').onkeydown=e=>{const I=e.target;
   if(e.key==='Enter'){const v=I.value.trim();I.value='';if(!v)return;bOut('$ '+v,'c');bHist.push(v);bHi=bHist.length;ensureDaily();S.daily.cmds++;save();const r=bCmd(v);if(r)bOut(r[0],r[1]);bRender()}
   else if(e.key==='ArrowUp'){if(bHi>0){bHi--;I.value=bHist[bHi]}e.preventDefault()}

@@ -71,6 +71,23 @@ const tiers = await pool.query('select split_part(u.name, \'_\' || $2, 1) as nam
 console.log('tiers after close:', tiers.rows);
 assert.equal(tiers.rows.find((r) => r.name === 'yaml_yana')?.tier, 1);
 
+// --- безопасность ---
+const evil = await app.inject({ method: 'POST', url: '/api/xp', payload: { amount: 5 }, headers: { origin: 'https://evil.example', host: 'localhost' } });
+assert.equal(evil.statusCode, 403, 'чужой Origin должен получить 403');
+const same = await app.inject({ method: 'POST', url: '/api/auth/logout', headers: { origin: 'http://localhost', host: 'localhost' } });
+assert.equal(same.statusCode, 200, 'свой Origin пропускаем');
+assert.equal((await alex('PUT', '/api/progress', { state: { xp: 'много' } })).statusCode, 400);
+assert.equal((await alex('PUT', '/api/progress', { state: { done: { '<img onerror=x>': true } } })).statusCode, 400);
+assert.equal((await alex('PUT', '/api/progress', { state: { xp: 50, futureField: { ok: true } } })).statusCode, 200, 'неизвестные поля пропускаем');
+const badName = await app.inject({ method: 'POST', url: '/api/auth/register', payload: { email: `x-${sid}@test.dev`, password: 'hunter2hunter2', name: '<script>' } });
+assert.equal(badName.statusCode, 400);
+const page = await app.inject({ method: 'GET', url: '/api/health' });
+assert.equal(page.headers['x-content-type-options'], 'nosniff');
+// лимит на вход: 10 попыток за 15 минут с одного IP
+let last = 0;
+for (let i = 0; i < 11; i++) last = (await app.inject({ method: 'POST', url: '/api/auth/login', payload: { email: `nobody-${sid}@test.dev`, password: 'wrong-password' } })).statusCode;
+assert.equal(last, 429, 'одиннадцатая попытка входа должна упереться в лимит');
+
 console.log('SMOKE OK');
 await app.close();
 await pool.end();

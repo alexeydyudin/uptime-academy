@@ -1,13 +1,14 @@
 // @ts-nocheck — перенесено из однофайловой версии; типизация по мере рефакторинга
+import { LESSONS } from '../content/lessons/index';
 import { HEART_MS, MAXH, TODAY, shift, daysBetween, S, HOOKS, save, ensureDaily, heartsTick, streakNow, addXP, QUESTS, RANKS, rankOf, TIERS, weekFrac, standings, ensureWeek, addReview, toast, $, esc, md, pick } from './state';
 import { duckSVG, LINES } from './duck';
-import { UNITS, LESSONS, unlocked, nextLesson } from './curriculum';
-import { sh, complete } from './shell';
+import { UNITS } from '../content/units';
+import { unlocked, nextLesson } from './progress';
+import { sh, complete } from '../engine/shell/index';
 import { startBoss } from './boss';
 import { runTests } from './worker';
-/* screens */
-export function show(id){['home','lesson','result','boss'].forEach(s=>document.getElementById(s).hidden=s!==id);window.scrollTo(0,0)}
 
+export function show(id){['home','lesson','result','boss'].forEach(s=>document.getElementById(s).hidden=s!==id);window.scrollTo(0,0)}
 export function renderHome(){
   heartsTick();ensureDaily();const st=streakNow();
   const cs=$('#cStreak');cs.querySelector('span').textContent=st;cs.classList.toggle('dim',st===0||S.daily.xp===0);
@@ -18,14 +19,14 @@ export function renderHome(){
   const wk=$('#week');wk.innerHTML='';const names=['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];for(let i=-6;i<=0;i++){const k=shift(TODAY(),i);const d=new Date(k+'T12:00:00');const el=document.createElement('div');el.innerHTML=`${names[d.getDay()]}<i class="${S.days.includes(k)?'on':''} ${i===0?'today':''}"></i>`;wk.append(el)}
   const q=$('#quests');q.innerHTML='';for(const x of QUESTS){const[a,b]=x.prog();const done=a>=b;const el=document.createElement('div');el.className='q'+(done?' done':'');el.innerHTML=`<div class="qh"><span style="color:inherit;font-weight:600"></span><span>${a}/${b}${done?' ✓':''}</span></div><div class="bar ok"><div style="width:${a/b*100}%"></div></div>`;el.querySelector('.qh span').textContent=x.text();q.append(el)}
   const rc=$('#reviewCard');rc.hidden=!S.review.length;
-  if(S.review.length){rc.innerHTML=`<h3>Работа над ошибками</h3><p style="margin:0 0 12px;font-size:13.5px;color:var(--muted)">Вопросов, где ты ошибся: ${S.review.length}. Жизни здесь не тратятся.</p><button class="btn ok" id="revGo" style="width:100%">Повторить</button>`;$('#revGo').onclick=startReview}
+  if(S.review.length){rc.innerHTML=`<h3>Работа над ошибками</h3><p style="margin:0 0 12px;font-size:13.5px;color:var(--muted)">Вопросов, где ты ошибся: ${S.review.length}. Жизни здесь не тратятся, а за разбор утка вернёт одну.</p><button class="btn ok" id="revGo" style="width:100%">Повторить</button>`;$('#revGo').onclick=startReview}
   ensureWeek();const tier=S.league.tier,rows=(HOOKS.leagueRows&&HOOKS.leagueRows())||standings(S.league.week,tier,S.league.xp,weekFrac());const left=Math.max(1,7-Math.floor(weekFrac()*7));
   const z=(HOOKS.leagueZones&&HOOKS.leagueZones())||{up:tier<TIERS.length-1?3:0,down:tier>0?3:0};
   const ranked=rows.map((x,i)=>Object.assign({rank:i+1},x)),vis=ranked.slice(0,10);if(!vis.some(x=>x.me)){const mine=ranked.find(x=>x.me);if(mine)vis.push(mine)}
   const lnote=HOOKS.leagueNote&&HOOKS.leagueNote();if(lnote)$('#leagueCard').innerHTML=`<h3>Лига</h3><div class="lgsub">${esc(lnote)}</div>`;else $('#leagueCard').innerHTML=`<h3>Лига «${TIERS[tier]}»</h3><div class="lgsub">${z.up?`Топ-${z.up} поднимаются`:tier>=TIERS.length-1?'Высшая лига':'Пока в группе мало игроков'}${z.down?`, последние ${z.down} вылетают`:''} · ${left} ${plural(left,'день','дня','дней')} до конца</div><ol class="lg">${vis.map(x=>`<li class="${x.me?'me':''} ${x.rank<=z.up?'up':''} ${x.rank>ranked.length-z.down?'down':''}"><b>${x.rank}</b><span>${esc(x.name)}</span><em>${x.xp} XP</em></li>`).join('')}</ol>`;
   // duck mood
   let mood='ok',say;const nl=nextLesson();const gap=S.lastDay?daysBetween(S.lastDay,TODAY()):0;
-  if(S.hearts===0){mood='worry';const m=Math.ceil((HEART_MS-(Date.now()-S.heartsAt))/60000);say=`Жизни кончились, как error budget в Чёрную пятницу. Новая через ${m} мин. Можно пока повторить пройденный урок.`}
+  if(S.hearts===0){mood='worry';const m=Math.ceil((HEART_MS-(Date.now()-S.heartsAt))/60000);say=`Жизни кончились, как error budget в Чёрную пятницу. Новая через ${m} мин. ${S.review.length?'Работа над ошибками вернёт жизнь прямо сейчас.':'Можно пока повторить пройденный урок.'}`}
   else if(S.lastDay&&gap>1){mood='angry';say=`Тебя не было ${gap} дн. Я пинговал тебя через liveness probe. Не ответил. Серия обнулилась. Начнём заново?`}
   else if(st>0&&S.daily.xp===0){mood='worry';say=`Серия ${st} дн. сгорит в полночь. Один урок, пять минут. Прод сам себя не поднимет.`}
   else if(S.league.lastResult&&!S.league.lastResult.seen){const lr=S.league.lastResult;lr.seen=true;save();const tn=TIERS[S.league.tier];mood=lr.d>0?'happy':lr.d<0?'angry':'ok';
@@ -37,7 +38,9 @@ export function renderHome(){
   $('#homeDuck').innerHTML=duckSVG(mood);$('#duckSay').textContent=say;
   // path
   const P=$('#path');P.innerHTML='';
-  if(nl){const c=document.createElement('div');c.className='cta';c.innerHTML=`${duckSVG(mood)}<p></p><button class="btn">Продолжить: ${esc(LESSONS[nl].title)}</button>`;c.querySelector('p').textContent=say;c.querySelector('.btn').onclick=()=>startLesson(nl);P.append(c)}const offs=[0,56,84,56,0,-56,-84,-56];let k=0;
+  if(nl){const c=document.createElement('div');c.className='cta';const noH=heartsBlocked(nl);
+    c.innerHTML=`${duckSVG(mood)}<p></p><button class="btn${noH&&S.review.length?' ok':''}">${noH?(S.review.length?'Работа над ошибками · +1 жизнь':`Новая жизнь через ${heartMins()} мин`):'Продолжить: '+esc(LESSONS[nl].title)}</button>`;
+    c.querySelector('p').textContent=say;const cb=c.querySelector('.btn');if(noH&&!S.review.length)cb.disabled=true;cb.onclick=()=>noH?startReview():startLesson(nl);P.append(c)}const offs=[0,56,84,56,0,-56,-84,-56];let k=0;
   for(const u of UNITS){
     const doneN=u.lessons.filter(l=>S.done[l]).length;const uLocked=u.soon||!unlocked(u.lessons[0]);
     const sec=document.createElement('section');sec.className='unit'+(uLocked?' locked':'');sec.style.setProperty('--uc',u.c);
@@ -58,12 +61,12 @@ export function renderHome(){
       sec.append(pj)}
     P.append(sec)}
 }
-
-/* lesson runner */
 export let R=null;
+const heartMins=()=>Math.max(1,Math.ceil((HEART_MS-(Date.now()-S.heartsAt))/60000));
+const heartsBlocked=id=>S.hearts===0&&!S.done[id]&&!HOOKS.unlockAll;
 export function startLesson(id){
   heartsTick();const L=LESSONS[id];
-  if(S.hearts===0&&!S.done[id]&&!HOOKS.unlockAll){toast('Жизни кончились. Повтори пройденный урок или подожди.');return}
+  if(heartsBlocked(id)){toast(S.review.length?'Жизни кончились. Пройди работу над ошибками: она вернёт жизнь.':`Жизни кончились. Новая через ${heartMins()} мин, пройденные уроки можно повторять.`);return}
   if(L.boss){startBoss();return}
   R={id,L,steps:L.steps.map((s,i)=>Object.assign({},s,{__i:i})),i:0,mistakes:0,combo:0,bestCombo:0,t0:Date.now(),W:L.setup?L.setup():null,replay:!!S.done[id],stepStart:0,cmds:[],hist:[],hi:0,checked:false,firstTry:true,total:L.steps.length};
   show('lesson');renderStep();
@@ -128,9 +131,10 @@ export function renderStep(){
     ta.onkeydown=e=>{if(e.key==='Tab'){e.preventDefault();ta.setRangeText('  ',ta.selectionStart,ta.selectionEnd,'end')}};ta.oninput=()=>s.code=ta.value;
     const ts=document.createElement('div');ts.className='tests';ts.innerHTML=s.checks.map(c=>`<div><span>○</span><small>${esc(c.name)}</small></div>`).join('');B.append(fn,ta,ts);
     setFoot('','<span style="color:var(--muted)">Отредактируй файл и нажми «Проверить».</span>','Проверить','',!!s.hint);
-    $('#lHint').onclick=()=>{if(B.querySelector('.hintp'))return;const h=document.createElement('div');h.className='hintp';h.innerHTML='Подсказка утки: '+md(s.hint).replace(/\n/g,'<br>');B.insertBefore(h,fn);R.firstTry=false;R.hints=(R.hints||0)+1};
+    $('#lHint').onclick=()=>{if(B.querySelector('.hintp'))return;const h=document.createElement('div');h.className='hintp';h.innerHTML='Подсказка утки: '+md(s.hint).replace(/\n/g,'<br>');B.insertBefore(h,fn);R.firstTry=false;R.hints=(R.hints||0)+1;$('#lHint').disabled=true;$('#lHint').textContent='Подсказка показана'};
     $('#lMain').onclick=()=>{const txt=ta.value;let all=true;ts.innerHTML='';
       for(const c of s.checks){let ok=false;try{ok=c.test(txt)}catch(_){}all=all&&ok;const d=document.createElement('div');d.innerHTML=`<span class="${ok?'p':'f'}">${ok?'✓':'✕'}</span><small></small>`;d.querySelector('small').textContent=c.name;ts.append(d)}
+      ts.scrollIntoView({block:'center',behavior:'smooth'});
       if(all){if(s.path&&R.W){R.W.files[s.path]=txt;if(s.onSave)s.onSave(R.W)}R.checked=true;good(s.done||'Конфиг в порядке.')}
       else{R.firstTry=false;$('#lFoot').className='lfoot bad';$('#lMsg').innerHTML=`${duckSVG('worry','duckmini')}<div><b>Пока не всё</b><span>Смотри на красные пункты. Жизни здесь не тратятся.</span></div>`}};
   }
@@ -141,7 +145,7 @@ export function renderStep(){
     setFoot('','<span style="color:var(--muted)">Код запускается на тестовых ситуациях кластера.</span>','Проверить');
     $('#lMain').onclick=async()=>{const b=$('#lMain');b.disabled=true;b.textContent='Проверяю…';const res=await runTests(ta.value,s.cases);b.disabled=false;b.textContent='Проверить';
       if(res.err){ts.innerHTML=`<div><span class="f">✕</span><small>${esc(res.err)}</small></div>`;R.firstTry=false;return}
-      let all=true;ts.innerHTML='';res.res.forEach((r,i)=>{const ok=!r.err&&s.cases[i].expect(r.calls);all=all&&ok;const d=document.createElement('div');
+      ts.scrollIntoView({block:'center',behavior:'smooth'});let all=true;ts.innerHTML='';res.res.forEach((r,i)=>{const ok=!r.err&&s.cases[i].expect(r.calls);all=all&&ok;const d=document.createElement('div');
         d.innerHTML=`<span class="${ok?'p':'f'}">${ok?'✓':'✕'}</span><small></small>`;d.querySelector('small').textContent=s.cases[i].name+(ok?'':r.err?` — ошибка: ${r.err}`:` — вызовы: ${r.calls.map(c=>c.t==='scale'?`scale('${c.n}', ${c.r})`:`restart('${c.p}')`).join(', ')||'нет'}`);ts.append(d)});
       if(all){S.code=(S.code&&!S.code.includes(ta.value)?S.code+'\n\n':'')+`// ${R.L.title}\n`+ta.value;save();R.checked=true;good('Все тесты зелёные. Этот код пригодится на боевом дежурстве, он уже там.')}else{R.firstTry=false;$('#lFoot').className='lfoot bad';$('#lMsg').innerHTML=`${duckSVG('worry','duckmini')}<div><b>Тесты не прошли</b><span>Поправь код и проверь снова. Жизни за это не снимаются.</span></div>`}};
   }
@@ -156,21 +160,19 @@ export function bad(ex,s){R.mistakes++;R.combo=0;if(!R.review&&s.__i!=null)addRe
 export function next(){R.i++;if(R.i>=R.steps.length)finishLesson();else renderStep()}
 document.addEventListener('keydown',e=>{if($('#lesson').hidden)return;if(R&&R.keyH)R.keyH(e);if(e.key==='Enter'&&document.activeElement.tagName!=='INPUT'&&document.activeElement.tagName!=='TEXTAREA'&&!$('#lMain').disabled&&document.activeElement!==$('#lMain')){e.preventDefault();$('#lMain').click()}});
 $('#lClose').onclick=()=>{R=null;renderHome();show('home')};
-
 export function outOfHearts(){show('result');const m=Math.ceil((HEART_MS-(Date.now()-S.heartsAt))/60000);
   $('#resBody').parentElement.className='';$('#resBody').className='result fail';
-  $('#resBody').innerHTML=`${duckSVG('worry')}<h1>Жизни кончились</h1><p>Как error budget в Чёрную пятницу. Новая жизнь через ${m} мин. Пройденные уроки можно повторять без жизней, и это тоже продлевает серию.</p><button class="btn" id="resGo">На карту</button>`;
-  $('#resBody .duck').style.width='140px';$('#resGo').onclick=()=>{renderHome();show('home')}}
-
+  $('#resBody').innerHTML=`${duckSVG('worry')}<h1>Жизни кончились</h1><p>Как error budget в Чёрную пятницу. Новая жизнь через ${m} мин. Работа над ошибками возвращает жизнь, а пройденные уроки можно повторять без жизней.</p><div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center"><button class="btn ghost" id="resGo">На карту</button>${S.review.length?'<button class="btn ok" id="resRev">Работа над ошибками</button>':''}</div>`;
+  $('#resBody .duck').style.width='140px';$('#resGo').onclick=()=>{renderHome();show('home')};if($('#resRev'))$('#resRev').onclick=startReview}
 export function finishLesson(extra){
   const L=R?R.L:LESSONS.l13;const id=R?R.id:'l13';const replay=R?R.replay:!!S.done.l13;const isReview=!!(R&&R.review);
   const perfect=R?R.mistakes===0&&R.firstTry:true;const before=rankOf(S.xp);ensureDaily();const goalBefore=S.daily.xp>=S.goal;const streakBefore=streakNow();const wasToday=S.lastDay===TODAY();
   let xp=isReview?L.xp:replay?Math.ceil(L.xp/2):L.xp;if(perfect)xp+=5;if(R&&R.bestCombo>=5)xp+=5;const hintPen=R?Math.min(Math.floor(xp/2),(R.hints||0)*2):0;xp-=hintPen;
-  if(!isReview)S.done[id]=true;if(perfect){S.daily.perfect=true}addXP(xp);
+  if(!isReview)S.done[id]=true;const healed=isReview&&S.hearts<MAXH;if(healed){S.hearts++;if(S.hearts===MAXH)S.heartsAt=Date.now()}if(perfect){S.daily.perfect=true}addXP(xp);
   const acc=R?Math.round((R.total/(R.total+R.mistakes))*100):100;const secs=R?Math.round((Date.now()-R.t0)/1000):extra.secs;
   show('result');const B=$('#resBody');B.className='result';
   const tiles=`<div class="tiles"><div class="tile"><small>Опыт</small><b>+${xp}</b></div><div class="tile" style="--tc:var(--ok)"><small>Точность</small><b>${acc}%</b></div><div class="tile" style="--tc:var(--u3)"><small>Время</small><b>${Math.floor(secs/60)}:${String(secs%60).padStart(2,'0')}</b></div></div>`;
-  let banners='';
+  let banners=healed?`<div class="banner"><svg><use href="#i-heart"/></svg><div><b>+1 жизнь</b>Ошибки разобраны, утка возвращает жизнь.</div></div>`:'';
   if(!wasToday)banners+=`<div class="banner"><svg><use href="#i-flame"/></svg><div><b>Серия: ${streakNow()} ${plural(streakNow(),'день','дня','дней')}</b>${streakBefore>0?'Не дай ей погаснуть завтра.':'Начало положено. Приходи завтра, утка проверит.'}</div></div>`;
   if(!goalBefore&&S.daily.xp>=S.goal)banners+=`<div class="banner"><svg><use href="#i-chest"/></svg><div><b>Дневная цель выполнена</b>${S.daily.xp} из ${S.goal} XP. Можно и больше.</div></div>`;
   if(rankOf(S.xp)>before)banners+=`<div class="banner"><svg><use href="#i-bolt"/></svg><div><b>Новый ранг: ${RANKS[rankOf(S.xp)][1]}</b>Можно смело менять строчку в резюме. Почти.</div></div>`;

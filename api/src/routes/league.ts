@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { config } from '../config.js';
 import { isAdmin } from '../lib/admin.js';
 import { pool } from '../db.js';
+import { LIMITS, byUser } from '../security.js';
 import { GROUP_SIZE, TIERS, addDays, weekStart, zones } from '../lib/league.js';
 
 const Xp = z.object({ amount: z.number().int().min(1).max(100) });
@@ -73,7 +74,7 @@ export async function leagueRoutes(app: FastifyInstance) {
   app.get('/league', { preHandler: app.requireUser }, async (req) => leagueView(req.user.uid));
 
   /** Клиент сообщает о заработанном опыте. Лига считается только по этим событиям. */
-  app.post('/xp', { preHandler: app.requireUser }, async (req, reply) => {
+  app.post('/xp', { preHandler: app.requireUser, config: { rateLimit: { ...LIMITS.xp, keyGenerator: byUser } } }, async (req, reply) => {
     const body = Xp.safeParse(req.body);
     if (!body.success) return reply.code(400).send({ error: 'amount: целое от 1 до 100' });
     const uid = req.user.uid;
