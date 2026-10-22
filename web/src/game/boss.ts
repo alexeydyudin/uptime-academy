@@ -1,15 +1,16 @@
 // @ts-nocheck — перенесено из однофайловой версии; типизация по мере рефакторинга
 import { S, save, ensureDaily, $, esc } from './state';
 import { duckSVG } from './duck';
-import { rid } from './curriculum';
-import { pad } from './shell';
-import { show, renderHome, line, finishBoss } from './ui';
+import { rid } from '../engine/world';
+import { pad } from '../engine/shell/util';
+import { show, renderHome, finishBoss, line } from './ui';
 import { makeWorker } from './worker';
-/* boss: night shift sim */
+
 export const CFG={api:{cap:120,ratio:1,leak:.22,desc:'HTTP API'},auth:{cap:200,ratio:.4,leak:.12,desc:'OAuth'},db:{cap:90,ratio:.6,leak:.06,desc:'PostgreSQL'},worker:{cap:60,ratio:.3,leak:1.5,desc:'очередь задач'}};
 export const CURVE=[.35,.27,.2,.16,.15,.18,.25,.35,.45,.53,.6,.66,.7,.68,.65,.67,.7,.78,.85,.94,1,.9,.7,.5];
 export const curve=h=>{const i=Math.floor(h)%24,f=h-Math.floor(h);return CURVE[i]*(1-f)+CURVE[(i+1)%24]*f};
-export const START=17*60,DUR=300;export let G=null,bTimer=null,bWorker=null,bWait=false;
+export const START=17*60,DUR=300;
+export let G=null,bTimer=null,bWorker=null,bWait=false;
 export const mkPod=(n,st)=>({name:`${n}-${rid()}`,svc:n,status:st,timer:st==='Creating'?3:0,mem:8+Math.random()*15,restarts:0,age:0,fault:false,oom:false});
 export const bClockStr=()=>{const a=START+G.t;return String(Math.floor(a/60)%24).padStart(2,'0')+':'+String(a%60).padStart(2,'0')};
 export function startBoss(){
@@ -67,10 +68,12 @@ export function bEnd(win,why){G.over=true;bSpeed(0);stopScript();
   B.innerHTML=`${duckSVG('angry')}<h1>Прод упал</h1><p style="margin:0">${esc(why)}</p><p style="margin:0;color:var(--muted)">Продержался до ${bClockStr()}. Жизни за дежурство не снимаются. Совет утки: запусти автоскейлер с cooldown и автохил, а db подними заранее.</p><div style="display:flex;gap:10px"><button class="btn ghost" id="resHome">На карту</button><button class="btn" id="resRetry">Ещё смену</button></div>`;
   B.querySelector('.duck').style.width='140px';$('#resHome').onclick=()=>{renderHome();show('home')};$('#resRetry').onclick=startBoss}
 $('#bClose').onclick=()=>{G.over=true;bSpeed(0);stopScript();renderHome();show('home')};
-$('#bRun').onclick=startScript;$('#bStop').onclick=()=>{stopScript();sLog('Скрипт остановлен')};
+$('#bRun').onclick=startScript;
+$('#bStop').onclick=()=>{stopScript();sLog('Скрипт остановлен')};
 $('#bCode').onkeydown=e=>{if(e.key==='Tab'){e.preventDefault();e.target.setRangeText('  ',e.target.selectionStart,e.target.selectionEnd,'end')}};
 document.querySelectorAll('[data-bt]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-bt]').forEach(x=>x.setAttribute('aria-selected',x===b));document.querySelectorAll('[data-bp]').forEach(p=>p.hidden=p.dataset.bp!==b.dataset.bt);if(b.dataset.bt==='script')document.querySelector('[data-bp="script"]').style.display='flex'});
-export const bHist=[];export let bHi=0;
+export const bHist=[];
+export let bHi=0;
 $('#bIn').onkeydown=e=>{const I=e.target;
   if(e.key==='Enter'){const v=I.value.trim();I.value='';if(!v)return;bOut('$ '+v,'c');bHist.push(v);bHi=bHist.length;ensureDaily();S.daily.cmds++;save();const r=bCmd(v);if(r)bOut(r[0],r[1]);bRender()}
   else if(e.key==='ArrowUp'){if(bHi>0){bHi--;I.value=bHist[bHi]}e.preventDefault()}

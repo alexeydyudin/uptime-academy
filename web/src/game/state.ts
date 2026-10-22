@@ -1,13 +1,12 @@
 // @ts-nocheck — перенесено из однофайловой версии; типизация по мере рефакторинга
-
-/* storage & meta */
 export const KEY='uptime-academy-v1', HEART_MS=20*60*1000, MAXH=5;
 export const dkey=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 export const TODAY=()=>dkey(new Date());
 export const shift=(k,n)=>{const d=new Date(k+'T12:00:00');d.setDate(d.getDate()+n);return dkey(d)};
 export const daysBetween=(a,b)=>Math.round((new Date(b+'T12:00:00')-new Date(a+'T12:00:00'))/864e5);
 export function fresh(){return{onboarded:false,goal:30,xp:0,streak:0,best:0,lastDay:null,days:[],hearts:MAXH,heartsAt:Date.now(),done:{},code:null,review:[],league:{tier:0,week:null,xp:0,lastResult:null},daily:{date:TODAY(),xp:0,cmds:0,perfect:false,claimed:{}}}}
-export let S;try{S=Object.assign(fresh(),JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(_){S=fresh()}
+export let S;
+try{S=Object.assign(fresh(),JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(_){S=fresh()}
 /** Точки подключения сетевого слоя (src/net). Без аккаунта игра работает полностью локально. */
 export interface GameHooks {
   save: ((s: unknown) => void)[];
@@ -38,7 +37,6 @@ export const QUESTS=[
 export function checkQuests(){ensureDaily();for(const q of QUESTS){const[a,b]=q.prog();if(a>=b&&!S.daily.claimed[q.id]){S.daily.claimed[q.id]=true;addXP(10,true);toast(`Квест «${q.text()}» выполнен · +10 XP`)}}save()}
 export const RANKS=[[0,'Стажёр'],[50,'Junior DevOps'],[130,'Middle DevOps'],[230,'Senior DevOps'],[340,'SRE'],[480,'Principal SRE']];
 export const rankOf=xp=>{let i=0;RANKS.forEach((r,j)=>{if(xp>=r[0])i=j});return i};
-/* leagues: локально — боты, с сервером — HOOKS.leagueRows */
 export const TIERS=['Бронза','Серебро','Золото','Сапфир','Рубин','Алмаз'];
 export const BOTS=['k8s_kirill','yaml_yana','pod_petrov','helm_hanna','grep_gosha','sudo_sasha','oncall_olya','cron_kostya','nginx_nina','terraform_tim','docker_dana','ansible_artur','prom_polina','git_gleb','vault_vera','redis_roma','kafka_katya','ci_ilya'];
 export const weekKey=()=>{const d=new Date();return shift(TODAY(),-((d.getDay()+6)%7))};
@@ -51,9 +49,9 @@ export function ensureWeek(){const wk=weekKey();if(S.league.week===wk)return;if(
   if(S.league.week){const rows=standings(S.league.week,S.league.tier,S.league.xp,1);const me=rows.findIndex(x=>x.me)+1;let d=0;
     if(S.league.xp>0&&me<=3&&S.league.tier<TIERS.length-1)d=1;else if(me>=8&&S.league.tier>0)d=-1;S.league.tier+=d;S.league.lastResult={rank:me,d,seen:false}}
   S.league.week=wk;S.league.xp=0;save()}
-/* работа над ошибками */
 export function addReview(lid,i){if(!S.review.some(x=>x.l===lid&&x.i===i)){S.review.push({l:lid,i});S.review=S.review.slice(-30);save()}}
-export let toastT;export function toast(m){const t=document.getElementById('toast');t.textContent=m;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,2600)}
+export let toastT;
+export function toast(m){const t=document.getElementById('toast');t.textContent=m;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,2600)}
 export const $=s=>document.querySelector(s);
 export const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 export const md=s=>esc(s).replace(/`([^`]+)`/g,'<code>$1</code>').replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>');

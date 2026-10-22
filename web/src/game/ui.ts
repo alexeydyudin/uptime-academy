@@ -1,13 +1,14 @@
 // @ts-nocheck — перенесено из однофайловой версии; типизация по мере рефакторинга
+import { LESSONS } from '../content/lessons/index';
 import { HEART_MS, MAXH, TODAY, shift, daysBetween, S, HOOKS, save, ensureDaily, heartsTick, streakNow, addXP, QUESTS, RANKS, rankOf, TIERS, weekFrac, standings, ensureWeek, addReview, toast, $, esc, md, pick } from './state';
 import { duckSVG, LINES } from './duck';
-import { UNITS, LESSONS, unlocked, nextLesson } from './curriculum';
-import { sh, complete } from './shell';
+import { UNITS } from '../content/units';
+import { unlocked, nextLesson } from './progress';
+import { sh, complete } from '../engine/shell/index';
 import { startBoss } from './boss';
 import { runTests } from './worker';
-/* screens */
-export function show(id){['home','lesson','result','boss'].forEach(s=>document.getElementById(s).hidden=s!==id);window.scrollTo(0,0)}
 
+export function show(id){['home','lesson','result','boss'].forEach(s=>document.getElementById(s).hidden=s!==id);window.scrollTo(0,0)}
 export function renderHome(){
   heartsTick();ensureDaily();const st=streakNow();
   const cs=$('#cStreak');cs.querySelector('span').textContent=st;cs.classList.toggle('dim',st===0||S.daily.xp===0);
@@ -58,8 +59,6 @@ export function renderHome(){
       sec.append(pj)}
     P.append(sec)}
 }
-
-/* lesson runner */
 export let R=null;
 export function startLesson(id){
   heartsTick();const L=LESSONS[id];
@@ -156,12 +155,10 @@ export function bad(ex,s){R.mistakes++;R.combo=0;if(!R.review&&s.__i!=null)addRe
 export function next(){R.i++;if(R.i>=R.steps.length)finishLesson();else renderStep()}
 document.addEventListener('keydown',e=>{if($('#lesson').hidden)return;if(R&&R.keyH)R.keyH(e);if(e.key==='Enter'&&document.activeElement.tagName!=='INPUT'&&document.activeElement.tagName!=='TEXTAREA'&&!$('#lMain').disabled&&document.activeElement!==$('#lMain')){e.preventDefault();$('#lMain').click()}});
 $('#lClose').onclick=()=>{R=null;renderHome();show('home')};
-
 export function outOfHearts(){show('result');const m=Math.ceil((HEART_MS-(Date.now()-S.heartsAt))/60000);
   $('#resBody').parentElement.className='';$('#resBody').className='result fail';
   $('#resBody').innerHTML=`${duckSVG('worry')}<h1>Жизни кончились</h1><p>Как error budget в Чёрную пятницу. Новая жизнь через ${m} мин. Пройденные уроки можно повторять без жизней, и это тоже продлевает серию.</p><button class="btn" id="resGo">На карту</button>`;
   $('#resBody .duck').style.width='140px';$('#resGo').onclick=()=>{renderHome();show('home')}}
-
 export function finishLesson(extra){
   const L=R?R.L:LESSONS.l13;const id=R?R.id:'l13';const replay=R?R.replay:!!S.done.l13;const isReview=!!(R&&R.review);
   const perfect=R?R.mistakes===0&&R.firstTry:true;const before=rankOf(S.xp);ensureDaily();const goalBefore=S.daily.xp>=S.goal;const streakBefore=streakNow();const wasToday=S.lastDay===TODAY();

@@ -1,6 +1,4 @@
 // @ts-nocheck — перенесено из однофайловой версии; типизация по мере рефакторинга
-
-/* duck */
 export function duckSVG(mood='ok',cls='duck'){
   const brow={ok:'',worry:'<path d="M30 24 l14 -4" stroke="#3a2a00" stroke-width="3" stroke-linecap="round"/>',angry:'<path d="M30 20 l15 7" stroke="#3a2a00" stroke-width="3.4" stroke-linecap="round"/>',happy:''}[mood];
   const eye=mood==='happy'?'<path d="M33 32 q5 -6 10 0" fill="none" stroke="#1b1b1b" stroke-width="3" stroke-linecap="round"/>':'<circle cx="38" cy="32" r="4.6" fill="#1b1b1b"/><circle cx="39.6" cy="30.4" r="1.5" fill="#fff"/>';

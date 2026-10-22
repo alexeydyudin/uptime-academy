@@ -1,0 +1,27 @@
+import type { Unit } from '../engine/types';
+
+export const UNITS: Unit[] = [
+ {id:'linux',n:1,c:'var(--u1)',title:'Linux',sub:'терминал, логи, процессы, права, systemd, cron, bash',weeks:'3–4 недели',lessons:['l1','l2','l3','l18','l19','l20'],
+  project:{text:'Подними свой Linux-сервер: виртуалку (VirtualBox, UTM) или самый дешёвый VPS.',items:['Зайти по SSH по ключу, вход по паролю отключить','Создать отдельного пользователя для приложения без лишних прав','Поставить nginx и включить автозапуск','Написать bash-скрипт проверки здоровья и повесить его на cron','Выложить скрипты в GitHub с README']}},
+ {id:'net',n:2,c:'var(--u2)',title:'Сети',sub:'DNS, HTTP, порты, разбор инцидента',weeks:'1–2 недели',lessons:['l21','l5','l4'],
+  project:{text:'Разберись, как твой сайт доходит до браузера.',items:['Завести домен или бесплатный поддомен (например, DuckDNS)','Направить A-запись на свой сервер','Выпустить HTTPS-сертификат Let\'s Encrypt через certbot','Разобрать вывод dig и curl -v для своего домена']}},
+ {id:'git',n:3,c:'var(--u3)',title:'Git',sub:'ветки, Pull Request, конфликты',weeks:'1 неделя',lessons:['l22','l23'],
+  project:{text:'Заведи репозиторий, в котором будут жить все проекты курса.',items:['Включить защиту ветки main: изменения только через PR','Сделать задачу через ветку и PR, влить после ревью','Нарочно устроить конфликт и разрешить его','Писать сообщения коммитов в стиле feat:, fix:, ci:']}},
+ {id:'docker',n:4,c:'var(--u3)',title:'Docker',sub:'контейнеры, Dockerfile, compose',weeks:'2 недели',lessons:['l6','l7','l24','l25'],
+  project:{text:'Упакуй своё приложение в контейнер. Подойдёт любое: бот, API, сайт.',items:['Dockerfile: multi-stage, фиксированный тег, не root','Поднять приложение с базой через docker compose','Опубликовать образ в Docker Hub или GitHub Container Registry','Записать в README размер образа до и после оптимизации']}},
+ {id:'cicd',n:5,c:'var(--u2)',title:'CI/CD',sub:'GitHub Actions, секреты, безопасный деплой',weeks:'2 недели',lessons:['l14','l15'],
+  project:{text:'Автоматизируй путь от коммита до сервера.',items:['Линтер и тесты на каждый push','Сборка и публикация Docker-образа из main','Автодеплой на свой сервер (ssh или compose pull)','Бейдж статуса CI в README']}},
+ {id:'iac',n:6,c:'var(--u1)',title:'Infrastructure as Code',sub:'Terraform, Ansible',weeks:'3 недели',lessons:['l26','l27'],
+  project:{text:'Опиши свою инфраструктуру кодом в любом облаке (Yandex Cloud, AWS, VK Cloud).',items:['Сервер и сеть в Terraform','State в удалённом хранилище (S3-совместимом)','Настройка сервера Ansible-плейбуком: пользователи, nginx, docker','Поднять всё с нуля одной командой и сразу destroy, чтобы не платить']}},
+ {id:'k8s',n:7,c:'var(--u4)',title:'Kubernetes',sub:'поды, сервисы, конфиги, пробы, Helm',weeks:'4 недели',lessons:['l8','l9','l10','l28','l29','l30'],
+  project:{text:'Запусти своё приложение в Kubernetes.',items:['Локальный кластер: kind, k3d или minikube','Deployment, Service и Ingress для приложения','Пароли в Secret, пробы и лимиты ресурсов','Упаковать в Helm-чарт, сделать upgrade и rollback']}},
+ {id:'obs',n:8,c:'var(--u2)',title:'Наблюдаемость',sub:'Prometheus, алерты, SLO',weeks:'2 недели',lessons:['l16','l17','l31'],
+  project:{text:'Сделай так, чтобы о проблемах ты узнавал раньше пользователей.',items:['Поднять Prometheus и Grafana (kube-prometheus-stack или compose)','Дашборд с четырьмя золотыми сигналами своего сервиса','Алерт на долю ошибок с for и ссылкой на runbook','Описать SLO и посчитать error budget']}},
+ {id:'sec',n:9,c:'var(--u6)',title:'DevSecOps',sub:'сканирование образов, секреты',weeks:'1–2 недели',lessons:['l32','l33'],
+  project:{text:'Встрой безопасность в свой конвейер.',items:['Trivy в CI с падением на CRITICAL','gitleaks в pre-commit и в CI','Dependabot или Renovate для обновления зависимостей','Ни одного секрета в git: только секреты CI и Secret']}},
+ {id:'sre',n:10,c:'var(--u5)',title:'Автоматизация и SRE',sub:'автоскейлер, автохил, постмортем, ночная смена',weeks:'2 недели',lessons:['l11','l12','l34','l13'],
+  project:{text:'Финал: научись восстанавливаться и рассказывать об этом.',items:['Runbook для каждого своего алерта','Учебный инцидент: уронить сервис и поднять по runbook','Постмортем по этому инциденту','Портфолио: README со схемой архитектуры всех проектов']}},
+ {id:'cloud',n:11,c:'var(--u3)',title:'Облака',sub:'VPC, IAM, managed-базы и Kubernetes',lessons:[],soon:true},
+ {id:'gitops',n:12,c:'var(--u4)',title:'GitOps и платформа',sub:'Argo CD, Flux, platform engineering',lessons:[],soon:true},
+ {id:'finops',n:13,c:'var(--u2)',title:'FinOps',sub:'сколько стоит облако и как не переплачивать',lessons:[],soon:true},
+];
