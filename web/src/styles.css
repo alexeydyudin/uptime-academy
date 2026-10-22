@@ -143,6 +143,8 @@ textarea.code{width:100%;height:260px;resize:vertical;background:var(--term);col
 .lfoot .msg svg.duckmini{width:52px;flex:none}
 .lfoot .msg b{display:block;font-family:var(--f-display);font-size:17px}
 .lfoot .msg span{font-size:14px}
+.lfoot .msg:empty{display:none}
+@media (max-width:520px){.lfoot .msg{flex-basis:100%}.lfoot .in>.btn{flex:1;padding-inline:12px}}
 .lfoot.ok{background:var(--ok-bg);border-color:transparent}.lfoot.ok .msg b{color:var(--ok)}
 .lfoot.bad{background:var(--bad-bg);border-color:transparent}.lfoot.bad .msg b{color:var(--bad)}
 
@@ -214,6 +216,19 @@ textarea.code{width:100%;height:260px;resize:vertical;background:var(--term);col
 .lg li em{font-style:normal;color:var(--muted);font-variant-numeric:tabular-nums}
 .lg li.up b{color:var(--ok)} .lg li.down b{color:var(--bad)}
 .lg li.me{background:color-mix(in srgb,var(--duck) 24%,transparent);font-weight:700}
+.lec{display:flex;flex-direction:column;gap:14px}
+.lec-dots{display:flex;gap:6px}.lec-dots i{width:28px;height:6px;border-radius:3px;background:var(--line)}.lec-dots i.on{background:var(--duck)}
+.lec-code{background:var(--term);color:var(--term-ink);border-radius:12px;padding:12px 14px;font-family:var(--f-mono);font-size:12.5px;line-height:1.55;overflow-x:auto;white-space:pre;margin:0;max-width:100%}
+.lec-terms{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;margin:0}
+.lec-terms div{background:var(--panel);border:2px solid var(--line);border-radius:12px;padding:8px 12px}
+.lec-terms dt{font-weight:700;font-size:14px}.lec-terms dd{margin:2px 0 0;color:var(--muted);font-size:13.5px}
+.proj{margin:22px auto 0;max-width:460px;background:var(--panel);border:2px dashed var(--line);border-radius:16px;padding:12px 16px;font-size:14px}
+.proj summary{cursor:pointer;display:flex;justify-content:space-between;gap:10px;font-weight:700;list-style:none}
+.proj summary::-webkit-details-marker{display:none}.proj summary span::before{content:'▸ ';color:var(--muted)}.proj[open] summary span::before{content:'▾ '}
+.proj summary b{font-variant-numeric:tabular-nums;color:var(--muted)}
+.proj p{margin:10px 0 6px}.proj ul{list-style:none;margin:0 0 8px;padding:0;display:flex;flex-direction:column;gap:6px}
+.proj label{display:flex;gap:8px;align-items:flex-start;cursor:pointer}.proj input{margin-top:3px;accent-color:var(--ok)}
+.proj small{color:var(--muted);font-size:12.5px}
 /* modal + toast */
 .modal{position:fixed;inset:0;background:rgba(8,12,20,.6);display:grid;place-items:center;padding:20px;z-index:30}
 .modal .card{max-width:440px;width:100%;display:flex;flex-direction:column;gap:14px}

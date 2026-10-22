@@ -41,7 +41,7 @@ export function renderHome(){
   for(const u of UNITS){
     const doneN=u.lessons.filter(l=>S.done[l]).length;const uLocked=u.soon||!unlocked(u.lessons[0]);
     const sec=document.createElement('section');sec.className='unit'+(uLocked?' locked':'');sec.style.setProperty('--uc',u.c);
-    sec.innerHTML=`<div class="uhead" style="background:${u.c}"><div><small>Юнит ${u.n}</small><h2></h2><p></p></div><span class="cnt">${u.soon?'скоро':doneN+'/'+u.lessons.length}</span></div><div class="nodes"></div>`;
+    sec.innerHTML=`<div class="uhead" style="background:${u.c}"><div><small>Ступень ${u.n}${u.weeks?` · ${u.weeks}`:''}</small><h2></h2><p></p></div><span class="cnt">${u.soon?'скоро':doneN+'/'+u.lessons.length}</span></div><div class="nodes"></div>`;
     sec.querySelector('h2').textContent=u.title;sec.querySelector('p').textContent=u.sub;
     const nodes=sec.querySelector('.nodes');
     if(u.soon){const n=document.createElement('div');n.className='node locked';n.innerHTML=`<button class="nbtn" disabled aria-label="Скоро"><svg><use href="#i-lock"/></svg></button><span class="nlabel">Утка уже пишет уроки</span>`;nodes.append(n)}
@@ -50,6 +50,12 @@ export function renderHome(){
       n.innerHTML=`${cur?'<span class="start">Начать</span>':''}<button class="nbtn" ${open?'':'disabled'} aria-label="${esc(L.title)}"><svg><use href="#${L.boss?'i-pager':done?'i-check':open?(id==='l1'?'i-play':'i-term'):'i-lock'}"/></svg></button><span class="nlabel"></span>`;
       n.querySelector('.nlabel').textContent=L.title+(done?'':` · ${L.xp} XP`);
       if(open)n.querySelector('.nbtn').onclick=()=>startLesson(id);nodes.append(n)}
+    if(u.project&&!u.soon){const st=(S.proj||{})[u.id]||{},total=u.project.items.length,cnt=()=>u.project.items.filter((_,i)=>((S.proj||{})[u.id]||{})[i]).length;
+      const pj=document.createElement('details');pj.className='proj';pj.innerHTML=`<summary><span>Проект для портфолио</span><b>${cnt()}/${total}</b></summary><p></p><ul></ul><small>Делается вживую: на своей машине, VPS или в облаке. Отмечай пункты, когда сделаешь.</small>`;
+      pj.querySelector('p').textContent=u.project.text;const ul=pj.querySelector('ul');
+      u.project.items.forEach((it,i)=>{const li=document.createElement('li');li.innerHTML=`<label><input type="checkbox" ${st[i]?'checked':''}><span></span></label>`;li.querySelector('span').textContent=it;
+        li.querySelector('input').onchange=e=>{S.proj=S.proj||{};S.proj[u.id]=Object.assign({},S.proj[u.id],{[i]:e.target.checked});save();pj.querySelector('summary b').textContent=cnt()+'/'+total};ul.append(li)});
+      sec.append(pj)}
     P.append(sec)}
 }
 
@@ -73,8 +79,15 @@ export function setFoot(state,html,btnText,btnCls,hint){
 export function renderStep(){
   const s=R.steps[R.i],B=$('#lBody');R.checked=false;R.cmds=[];R.keyH=null;
   $('#lProg').style.width=(Math.min(R.i,R.total)/R.total*100)+'%';$('#lHearts span').textContent=S.hearts;$('#lCombo').textContent=R.combo>=3?`×${R.combo} подряд`:'';
-  const kinds={learn:'Теория',quiz:'Вопрос',task:'Практика в терминале',script:'Код',edit:'Конфиг'};
+  const kinds={learn:'Теория',lecture:'Лекция',quiz:'Вопрос',task:'Практика в терминале',script:'Код',edit:'Конфиг'};
   B.innerHTML=`<span class="kind">${kinds[s.t]}${s.retry?' · повтор':''}</span>`;
+  if(s.t==='lecture'){const pg=s.page||0,P=s.pages[pg],last=pg>=s.pages.length-1;
+    const d=document.createElement('div');d.className='lec';
+    d.innerHTML=`<div class="lec-dots" aria-label="Карточка ${pg+1} из ${s.pages.length}">${s.pages.map((_,i)=>`<i class="${i<=pg?'on':''}"></i>`).join('')}</div><h2>${md(P.h)}</h2>${P.p?`<p>${md(P.p).replace(/\n/g,'<br>')}</p>`:''}${P.code?`<pre class="lec-code"></pre>`:''}${P.terms?`<dl class="lec-terms">${P.terms.map(([t,x])=>`<div><dt>${md(t)}</dt><dd>${md(x)}</dd></div>`).join('')}</dl>`:''}`;
+    if(P.code)d.querySelector('.lec-code').textContent=P.code;B.append(d);
+    setFoot('',pg===0?`${duckSVG('ok','duckmini')}<span style="color:var(--muted)">Короткая теория, потом практика.</span>`:'',last?'К практике':'Дальше','',pg>0);
+    if(pg>0){const hb=$('#lHint');hb.textContent='Назад';hb.onclick=()=>{s.page=pg-1;renderStep()}}
+    $('#lMain').onclick=()=>{if(last){s.page=0;next()}else{s.page=pg+1;renderStep()}};return}
   if(s.t==='learn'){const d=document.createElement('div');d.className='learn';d.innerHTML=`${duckSVG('ok')}<div style="display:flex;flex-direction:column;gap:10px"><h2>${md(s.h)}</h2><p>${md(s.p)}</p></div>`;B.append(d);setFoot('','','Дальше');$('#lMain').onclick=next;return}
   const h=document.createElement('h2');h.innerHTML=md(s.h);B.append(h);
   if(s.p){const p=document.createElement('p');p.innerHTML=md(s.p).replace(/\n/g,'<br>');B.append(p)}

@@ -148,6 +148,8 @@ textarea.code{width:100%;height:260px;resize:vertical;background:var(--term);col
 .lfoot .msg svg.duckmini{width:52px;flex:none}
 .lfoot .msg b{display:block;font-family:var(--f-display);font-size:17px}
 .lfoot .msg span{font-size:14px}
+.lfoot .msg:empty{display:none}
+@media (max-width:520px){.lfoot .msg{flex-basis:100%}.lfoot .in>.btn{flex:1;padding-inline:12px}}
 .lfoot.ok{background:var(--ok-bg);border-color:transparent}.lfoot.ok .msg b{color:var(--ok)}
 .lfoot.bad{background:var(--bad-bg);border-color:transparent}.lfoot.bad .msg b{color:var(--bad)}
 
@@ -219,6 +221,19 @@ textarea.code{width:100%;height:260px;resize:vertical;background:var(--term);col
 .lg li em{font-style:normal;color:var(--muted);font-variant-numeric:tabular-nums}
 .lg li.up b{color:var(--ok)} .lg li.down b{color:var(--bad)}
 .lg li.me{background:color-mix(in srgb,var(--duck) 24%,transparent);font-weight:700}
+.lec{display:flex;flex-direction:column;gap:14px}
+.lec-dots{display:flex;gap:6px}.lec-dots i{width:28px;height:6px;border-radius:3px;background:var(--line)}.lec-dots i.on{background:var(--duck)}
+.lec-code{background:var(--term);color:var(--term-ink);border-radius:12px;padding:12px 14px;font-family:var(--f-mono);font-size:12.5px;line-height:1.55;overflow-x:auto;white-space:pre;margin:0;max-width:100%}
+.lec-terms{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;margin:0}
+.lec-terms div{background:var(--panel);border:2px solid var(--line);border-radius:12px;padding:8px 12px}
+.lec-terms dt{font-weight:700;font-size:14px}.lec-terms dd{margin:2px 0 0;color:var(--muted);font-size:13.5px}
+.proj{margin:22px auto 0;max-width:460px;background:var(--panel);border:2px dashed var(--line);border-radius:16px;padding:12px 16px;font-size:14px}
+.proj summary{cursor:pointer;display:flex;justify-content:space-between;gap:10px;font-weight:700;list-style:none}
+.proj summary::-webkit-details-marker{display:none}.proj summary span::before{content:'▸ ';color:var(--muted)}.proj[open] summary span::before{content:'▾ '}
+.proj summary b{font-variant-numeric:tabular-nums;color:var(--muted)}
+.proj p{margin:10px 0 6px}.proj ul{list-style:none;margin:0 0 8px;padding:0;display:flex;flex-direction:column;gap:6px}
+.proj label{display:flex;gap:8px;align-items:flex-start;cursor:pointer}.proj input{margin-top:3px;accent-color:var(--ok)}
+.proj small{color:var(--muted);font-size:12.5px}
 /* modal + toast */
 .modal{position:fixed;inset:0;background:rgba(8,12,20,.6);display:grid;place-items:center;padding:20px;z-index:30}
 .modal .card{max-width:440px;width:100%;display:flex;flex-direction:column;gap:14px}
@@ -423,15 +438,29 @@ const LINES={
 
 /* =================== curriculum =================== */
 const UNITS=[
- {id:'linux',n:1,c:'var(--u1)',title:'Терминал',sub:'pwd, ls, cd, cat, grep, ps, kill',lessons:['l1','l2','l3']},
- {id:'svc',n:2,c:'var(--u2)',title:'Сервисы и сеть',sub:'systemctl, логи, диск, HTTP-коды',lessons:['l4','l5']},
- {id:'docker',n:3,c:'var(--u3)',title:'Контейнеры',sub:'docker run, ps, logs, переменные окружения',lessons:['l6','l7']},
- {id:'k8s',n:4,c:'var(--u4)',title:'Kubernetes',sub:'поды, деплойменты, откат, масштабирование',lessons:['l8','l9','l10']},
- {id:'auto',n:5,c:'var(--u5)',title:'Автоматизация',sub:'пишем свой автоскейлер и автохил',lessons:['l11','l12']},
- {id:'cicd',n:6,c:'var(--u3)',title:'CI/CD пайплайны',sub:'git, GitHub Actions, секреты, безопасный деплой',lessons:['l14','l15']},
- {id:'obs',n:7,c:'var(--u2)',title:'Мониторинг и алерты',sub:'Prometheus, PromQL, правила алертов',lessons:['l16','l17']},
- {id:'boss',n:8,c:'var(--u6)',title:'Боевое дежурство',sub:'всё вместе, в реальном времени',lessons:['l13']},
- {id:'iac',n:9,c:'var(--u1)',title:'Terraform',sub:'скоро',lessons:[],soon:true},
+ {id:'linux',n:1,c:'var(--u1)',title:'Linux',sub:'терминал, логи, процессы, права, systemd, cron, bash',weeks:'3–4 недели',lessons:['l1','l2','l3','l18','l19','l20'],
+  project:{text:'Подними свой Linux-сервер: виртуалку (VirtualBox, UTM) или самый дешёвый VPS.',items:['Зайти по SSH по ключу, вход по паролю отключить','Создать отдельного пользователя для приложения без лишних прав','Поставить nginx и включить автозапуск','Написать bash-скрипт проверки здоровья и повесить его на cron','Выложить скрипты в GitHub с README']}},
+ {id:'net',n:2,c:'var(--u2)',title:'Сети',sub:'DNS, HTTP, порты, разбор инцидента',weeks:'1–2 недели',lessons:['l21','l5','l4'],
+  project:{text:'Разберись, как твой сайт доходит до браузера.',items:['Завести домен или бесплатный поддомен (например, DuckDNS)','Направить A-запись на свой сервер','Выпустить HTTPS-сертификат Let\'s Encrypt через certbot','Разобрать вывод dig и curl -v для своего домена']}},
+ {id:'git',n:3,c:'var(--u3)',title:'Git',sub:'ветки, Pull Request, конфликты',weeks:'1 неделя',lessons:['l22','l23'],
+  project:{text:'Заведи репозиторий, в котором будут жить все проекты курса.',items:['Включить защиту ветки main: изменения только через PR','Сделать задачу через ветку и PR, влить после ревью','Нарочно устроить конфликт и разрешить его','Писать сообщения коммитов в стиле feat:, fix:, ci:']}},
+ {id:'docker',n:4,c:'var(--u3)',title:'Docker',sub:'контейнеры, Dockerfile, compose',weeks:'2 недели',lessons:['l6','l7','l24','l25'],
+  project:{text:'Упакуй своё приложение в контейнер. Подойдёт любое: бот, API, сайт.',items:['Dockerfile: multi-stage, фиксированный тег, не root','Поднять приложение с базой через docker compose','Опубликовать образ в Docker Hub или GitHub Container Registry','Записать в README размер образа до и после оптимизации']}},
+ {id:'cicd',n:5,c:'var(--u2)',title:'CI/CD',sub:'GitHub Actions, секреты, безопасный деплой',weeks:'2 недели',lessons:['l14','l15'],
+  project:{text:'Автоматизируй путь от коммита до сервера.',items:['Линтер и тесты на каждый push','Сборка и публикация Docker-образа из main','Автодеплой на свой сервер (ssh или compose pull)','Бейдж статуса CI в README']}},
+ {id:'iac',n:6,c:'var(--u1)',title:'Infrastructure as Code',sub:'Terraform, Ansible',weeks:'3 недели',lessons:['l26','l27'],
+  project:{text:'Опиши свою инфраструктуру кодом в любом облаке (Yandex Cloud, AWS, VK Cloud).',items:['Сервер и сеть в Terraform','State в удалённом хранилище (S3-совместимом)','Настройка сервера Ansible-плейбуком: пользователи, nginx, docker','Поднять всё с нуля одной командой и сразу destroy, чтобы не платить']}},
+ {id:'k8s',n:7,c:'var(--u4)',title:'Kubernetes',sub:'поды, сервисы, конфиги, пробы, Helm',weeks:'4 недели',lessons:['l8','l9','l10','l28','l29','l30'],
+  project:{text:'Запусти своё приложение в Kubernetes.',items:['Локальный кластер: kind, k3d или minikube','Deployment, Service и Ingress для приложения','Пароли в Secret, пробы и лимиты ресурсов','Упаковать в Helm-чарт, сделать upgrade и rollback']}},
+ {id:'obs',n:8,c:'var(--u2)',title:'Наблюдаемость',sub:'Prometheus, алерты, SLO',weeks:'2 недели',lessons:['l16','l17','l31'],
+  project:{text:'Сделай так, чтобы о проблемах ты узнавал раньше пользователей.',items:['Поднять Prometheus и Grafana (kube-prometheus-stack или compose)','Дашборд с четырьмя золотыми сигналами своего сервиса','Алерт на долю ошибок с for и ссылкой на runbook','Описать SLO и посчитать error budget']}},
+ {id:'sec',n:9,c:'var(--u6)',title:'DevSecOps',sub:'сканирование образов, секреты',weeks:'1–2 недели',lessons:['l32','l33'],
+  project:{text:'Встрой безопасность в свой конвейер.',items:['Trivy в CI с падением на CRITICAL','gitleaks в pre-commit и в CI','Dependabot или Renovate для обновления зависимостей','Ни одного секрета в git: только секреты CI и Secret']}},
+ {id:'sre',n:10,c:'var(--u5)',title:'Автоматизация и SRE',sub:'автоскейлер, автохил, постмортем, ночная смена',weeks:'2 недели',lessons:['l11','l12','l34','l13'],
+  project:{text:'Финал: научись восстанавливаться и рассказывать об этом.',items:['Runbook для каждого своего алерта','Учебный инцидент: уронить сервис и поднять по runbook','Постмортем по этому инциденту','Портфолио: README со схемой архитектуры всех проектов']}},
+ {id:'cloud',n:11,c:'var(--u3)',title:'Облака',sub:'VPC, IAM, managed-базы и Kubernetes',lessons:[],soon:true},
+ {id:'gitops',n:12,c:'var(--u4)',title:'GitOps и платформа',sub:'Argo CD, Flux, platform engineering',lessons:[],soon:true},
+ {id:'finops',n:13,c:'var(--u2)',title:'FinOps',sub:'сколько стоит облако и как не переплачивать',lessons:[],soon:true},
 ];
 const APP_LOG=['08:00:01 INFO  api started on :8080','08:00:02 INFO  connected to db','08:14:22 INFO  GET /orders 200 31ms','08:14:25 WARN  slow query 1200ms','08:15:02 ERROR db connection timeout after 30s','08:15:03 INFO  retry 1/3','08:15:09 INFO  GET /orders 200 54ms','08:31:44 ERROR db connection timeout after 30s','08:31:45 INFO  retry 1/3','08:40:10 INFO  GET /cart 200 22ms','08:52:13 WARN  pool exhausted, waiting','08:52:43 ERROR db connection timeout after 30s','08:53:00 INFO  GET /profile 200 18ms'].join('\n');
 function baseWorld(){
@@ -464,6 +493,64 @@ function repoWorld(){const W=baseWorld();['/home/dev/app','/home/dev/app/.github
   W.git={modified:[],staged:[],ahead:0,log:[{h:'9c41e02',msg:'feat: add cart discounts'},{h:'1b7d3aa',msg:'chore: bump engines to node 20'},{h:'f02e9c1',msg:'fix: cart total rounding'}]};
   W.ci={runs:[{id:4821,status:'failure',title:'feat: add cart discounts'},{id:4820,status:'failure',title:'chore: bump engines to node 20'},{id:4819,status:'success',title:'fix: cart total rounding'}]};
   return W}
+/* ---- миры для уроков роадмапа 2026 ---- */
+function permWorld(){const W=baseWorld();W.modes={};W.owners={};
+  W.files['/home/dev/deploy.sh']='#!/bin/bash\necho "Деплой shop v1.4 начат..."\necho "Готово: 3 пода обновлены"';W.modes['/home/dev/deploy.sh']='644';
+  W.dirs.add('/etc/shop');W.owners['/etc/shop']='root:root';W.files['/etc/shop/db.env']='DB_USER=shop\nDB_PASSWORD=S3cr3t-prod-pass';W.modes['/etc/shop/db.env']='644';W.owners['/etc/shop/db.env']='root:root';return W}
+function svcWorld(){const W=baseWorld();
+  W.svc['node-exporter']={active:false,enabled:false,desc:'Prometheus Node Exporter',journal:'Oct 21 03:59:58 prod-web-01 systemd[1]: Stopping node-exporter.service - Prometheus Node Exporter...\nOct 21 03:59:58 prod-web-01 systemd[1]: Stopped node-exporter.service.\n-- Boot 7c1e4f0a9b2d4e8f --'};
+  W.dirs.add('/var/spool');W.dirs.add('/var/spool/cron');W.files['/var/spool/cron/dev']='# м  ч  д  мес  дн_нед  команда\n';
+  W.files['/home/dev/backup.sh']='#!/bin/bash\npg_dump shop | gzip > /backup/shop-$(date +%F).sql.gz';return W}
+function bashWorld(){const W=baseWorld();W.modes={};W.owners={};
+  W.files['/home/dev/healthcheck.sh']='#!/usr/bin/env bash\n# Проверка здоровья shop. Запуск: ./healthcheck.sh\n# TODO: строгий режим, переменная URL, curl -f, OK или ERROR + exit 1\n';W.modes['/home/dev/healthcheck.sh']='644';return W}
+function dnsWorld(){const W=baseWorld();W.dns={'shop.local':'10.0.0.15','api.shop.local':'10.0.0.16','github.com':'140.82.121.4'};W.alive=['10.0.0.15','10.0.0.16','140.82.121.4'];
+  W.files['/etc/hosts']='127.0.0.1   localhost\n127.0.1.1   prod-web-01\n10.0.0.99   shop.local   # временно, на время переезда (март)';return W}
+function gitWorld(){const W=baseWorld();const root='/home/dev/shop';W.dirs.add(root);W.cwd=root;
+  W.files[root+'/config.yaml']='server:\n  port: 8080\napi:\n  timeout: 5s\n';W.files[root+'/README.md']='# Uptime Shop';
+  W.g={root,branch:'main',branches:{main:[{h:'3e1a9c0',msg:'init: shop service'},{h:'7b2d4f1',msg:'feat: add cart api'}]},staged:[],modified:[],remote:['main'],upstream:{main:true},pushed:{main:2},ahead:0};return W}
+function conflictWorld(){const W=gitWorld(),G=W.g,b='feature/api-timeout';
+  G.branches[b]=[...G.branches.main,{h:'c41f0e2',msg:'feat: api timeout 30s'}];G.branches.main=[...G.branches.main,{h:'9d8e7a3',msg:'feat: retries for api (Олег)'}];
+  G.branch=b;G.remote.push(b);G.upstream[b]=true;G.pushed[b]=3;W.files[G.root+'/config.yaml']='server:\n  port: 8080\napi:\n  timeout: 30s\n';
+  G.conflictOn=true;G.conflictText='server:\n  port: 8080\napi:\n<<<<<<< HEAD\n  timeout: 30s\n=======\n  timeout: 10s\n  retries: 3\n>>>>>>> main\n';return W}
+function dockerfileWorld(){const W=baseWorld();const root='/home/dev/shop';W.dirs.add(root);W.dirs.add(root+'/src');W.cwd=root;
+  W.files[root+'/package.json']='{\n  "name": "uptime-shop",\n  "scripts": { "build": "tsc", "start": "node dist/server.js" }\n}';W.files[root+'/src/server.ts']='// API магазина';
+  W.files[root+'/Dockerfile']='FROM node:latest\nWORKDIR /app\nCOPY . .\nRUN npm install\nRUN npm run build\nCMD npm start\n';W.imgInfo={};return W}
+function composeWorld(){const W=dockerfileWorld();W.images.push('shop:1.1');W.imgInfo['shop:1.1']={size:'168MB',froms:['node:22-alpine','node:22-alpine'],base:'node:22-alpine'};
+  W.files['/home/dev/shop/compose.yaml']='services:\n  api:\n    image: shop:1.1\n    ports:\n      - "8080:8080"\n';return W}
+function tfWorld(){const W=baseWorld();const dir='/home/dev/infra';W.dirs.add(dir);W.cwd=dir;
+  W.files[dir+'/main.tf']='provider "aws" {\n  region = "eu-central-1"\n}\n\nresource "aws_instance" "web" {\n  ami           = "ami-0a1b2c3d4e5f67890"\n  instance_type = "t3.micro"\n  tags = { Name = "shop-web" }\n}\n\nresource "aws_s3_bucket" "assets" {\n  bucket = "uptime-shop-assets"\n}\n';
+  W.files[dir+'/terraform.tfstate']='{ "version": 4, "resources": [ "aws_instance.web" ] }';W.tf={dir,inited:false,state:{web:'t3.large',bucket:false},await:false};return W}
+function ansWorld(){const W=baseWorld();const dir='/home/dev/ansible';W.dirs.add(dir);W.cwd=dir;
+  W.files[dir+'/inventory.ini']='[web]\nweb-1 ansible_host=10.0.0.21\nweb-2 ansible_host=10.0.0.22\n';
+  W.files[dir+'/site.yml']='- name: Веб-серверы\n  hosts: all\n  tasks:\n    # TODO: установить nginx и запустить его с автозапуском\n';W.ans={dir,applied:false};return W}
+function svcK8sWorld(){const W=k8sWorld(baseWorld(),{web:{replicas:3,image:'web:1.4',ok:true,load:60}});W.k8s.svc={web:{selector:'shop-web',port:80,targetPort:8080}};
+  const dir='/home/dev/k8s';W.dirs.add(dir);W.cwd=dir;W.files[dir+'/service.yaml']='apiVersion: v1\nkind: Service\nmetadata:\n  name: web\nspec:\n  selector:\n    app: shop-web\n  ports:\n    - port: 80\n      targetPort: 8080\n';return W}
+function cfgK8sWorld(){const W=k8sWorld(baseWorld(),{shop:{replicas:2,image:'shop:2.4',ok:true,load:50}});W.k8s.secrets={};const dir='/home/dev/k8s';W.dirs.add(dir);W.cwd=dir;
+  W.files[dir+'/deployment.yaml']='apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: shop\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: shop\n  template:\n    metadata:\n      labels:\n        app: shop\n    spec:\n      containers:\n        - name: shop\n          image: shop:2.4\n          ports:\n            - containerPort: 8080\n          env:\n            - name: DB_PASSWORD\n              value: "S3cr3t-prod-pass"\n';return W}
+function helmWorld(){const W=k8sWorld(baseWorld(),{});W.helm={repos:{},rel:{}};return W}
+function trivyWorld(){const W=dockerfileWorld();const root='/home/dev/shop';
+  W.files[root+'/Dockerfile']='FROM node:16 AS build\nWORKDIR /app\nCOPY package*.json ./\nRUN npm ci\nCOPY . .\nRUN npm run build\n\nFROM node:16\nWORKDIR /app\nCOPY --from=build /app/dist ./dist\nCOPY --from=build /app/node_modules ./node_modules\nUSER node\nCMD ["node", "dist/server.js"]\n';
+  W.images.push('shop:1.2');W.imgInfo['shop:1.2']={size:'412MB',froms:['node:16','node:16'],base:'node:16'};
+  W.dirs.add(root+'/.github');W.dirs.add(root+'/.github/workflows');
+  W.files[root+'/.github/workflows/ci.yml']='name: ci\non: [push]\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: docker build -t shop:${{ github.sha }} .\n      # TODO: сканирование образа\n      - run: docker push registry.local/shop:${{ github.sha }}\n';return W}
+function leakWorld(){const W=gitWorld();const root='/home/dev/shop';W.dirs.add(root+'/config');
+  W.files[root+'/config/aws.js']='// Доступ к S3 для загрузки картинок\nconst AWS_REGION = "eu-central-1";\nconst AWS_KEY = "AKIAIOSFODNN7EXAMPLE";\nconst AWS_SECRET = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY";\n\nmodule.exports = { AWS_REGION, AWS_KEY, AWS_SECRET };\n';
+  W.files[root+'/.gitignore']='node_modules/\ndist/\n';W.leak={file:root+'/config/aws.js'};return W}
+const mdSec=(t,h)=>{const p=t.split(/^##\s*/m).find(x=>x.toLowerCase().startsWith(h.toLowerCase()));return p?p.slice(p.indexOf('\n')+1):''};
+const COMPOSE_CHECKS=[
+ {name:'Сервис db на образе postgres с версией',test:t=>/^\s{2}db:\s*$/m.test(t)&&/image:\s*["']?postgres:\d+/.test(t)},
+ {name:'Пароль базы задан (POSTGRES_PASSWORD)',test:t=>/POSTGRES_PASSWORD/.test(t)},
+ {name:'Данные базы в volume (/var/lib/postgresql/data), volume объявлен',test:t=>{const m=t.match(/-\s*["']?([\w.\/-]+):\/var\/lib\/postgresql\/data/);if(!m)return false;if(/^[.\/]/.test(m[1]))return true;return new RegExp('^volumes:\\s*\\n\\s+'+m[1].replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+':','m').test(t)}},
+ {name:'api ходит в базу по имени сервиса db',test:t=>/DATABASE_URL\s*[=:]\s*["']?postgres(ql)?:\/\/[^@\s]+@db:5432\//.test(t)},
+ {name:'api зависит от db (depends_on)',test:t=>/depends_on:\s*\n\s+-\s*db\b|depends_on:\s*\[\s*db\s*\]|depends_on:\s*\n\s+db:/.test(t)},
+];
+const DEPLOY_CHECKS=[
+ {name:'Пароль не лежит в манифесте открытым текстом',test:t=>!/S3cr3t-prod-pass/.test(t)},
+ {name:'DB_PASSWORD берётся из Secret db, ключ password',test:t=>/name:\s*DB_PASSWORD\s*\n\s+valueFrom:\s*\n\s+secretKeyRef:/.test(t)&&/secretKeyRef:\s*\n(?:\s+\w+:.*\n?){0,1}\s+name:\s*db\b/.test(t)&&/secretKeyRef:[\s\S]{0,120}key:\s*password\b/.test(t)},
+ {name:'readinessProbe по HTTP на /healthz',test:t=>/readinessProbe:\s*\n\s+httpGet:\s*\n[\s\S]{0,80}path:\s*\/healthz/.test(t)},
+ {name:'livenessProbe',test:t=>/livenessProbe:\s*\n\s+\w+/.test(t)},
+ {name:'Заданы requests и limits ресурсов',test:t=>/resources:\s*\n\s+requests:/.test(t)&&/limits:\s*\n\s+(memory|cpu):/.test(t)&&/memory:/.test(t)},
+];
 const LESSONS={
  l1:{title:'Где я?',xp:15,setup:baseWorld,steps:[
   {t:'learn',h:'Терминал — главный инструмент девопса',p:'Ты вводишь команду, сервер отвечает текстом. Базовый набор для ориентации:\n`pwd` — где я, `ls` — что здесь, `cd <папка>` — перейти, `cat <файл>` — показать файл.'},
@@ -644,11 +731,313 @@ const LESSONS={
   {t:'quiz',h:'Диск заполнен на 70% и растёт на 1% в неделю. Как алертить?',o:['Тикет в бэклог, а не ночной вызов','Будить дежурного немедленно','Никак не алертить','Перезагрузить сервер'],a:0,ex:'До проблемы месяцы. Будить человека стоит, только если без него сломается в ближайшие часы.'},
   {t:'quiz',h:'Алерт срабатывает 40 раз за ночь и всегда сам проходит. Что делать?',o:['Поправить порог или удалить алерт','Добавить второго дежурного','Отключить звук на телефоне','Ничего, так и должно быть'],a:0,ex:'Алерт, который не требует действий, вредит: учит игнорировать пейджер.'},
  ]},
+ l18:{title:'Права и пользователи',xp:25,setup:permWorld,steps:[
+  {t:'lecture',pages:[
+   {h:'Кто что может с файлом',p:'У каждого файла есть владелец, группа и права для трёх категорий: владелец (u), группа (g) и все остальные (o). Права: r — читать, w — писать, x — выполнять (у папки x значит «заходить внутрь»).',code:'-rwxr-x---  1 shop shop  2048  deploy.sh\n│└┬┘└┬┘└┬┘    │    │\n│ u  g  o    владелец, группа\n└ тип: - файл, d папка'},
+   {h:'Права числами',p:'r = 4, w = 2, x = 1. Для каждой категории их складывают. Эти наборы встречаются постоянно, их стоит запомнить.',code:'755  rwxr-xr-x  скрипты и папки\n644  rw-r--r--  обычные файлы\n600  rw-------  ключи и секреты\n777  rwxrwxrwx  никогда так не делай'},
+   {h:'chmod, chown и sudo',p:'`chmod` меняет права: `chmod +x file`, `chmod 600 file`. `chown` меняет владельца: `chown user:group file`. Чужие файлы может менять только root, поэтому такие команды запускают через `sudo`.',terms:[['sudo','выполнить одну команду от имени root'],['least privilege','у сервиса и человека ровно столько прав, сколько нужно для работы'],['id','кто я и в каких группах']]}]},
+  {t:'task',h:'Запусти деплой',p:'В домашней папке лежит скрипт deploy.sh. Запусти его.',hints:['Скрипт из текущей папки запускают с ./ перед именем.','./<имя скрипта>','./deploy.sh'],sol:['./deploy.sh'],
+   done:'Permission denied: системе не разрешено исполнять этот файл. Разберёмся почему.',check:W=>!!(W.f.execTried||W.f.execOk)},
+  {t:'task',h:'Выясни почему',p:'Посмотри права на deploy.sh.',hints:['Длинный формат ls показывает права.','ls -l <файл>','ls -l deploy.sh'],sol:['ls -l deploy.sh'],
+   done:'rw-r--r--: читать и писать можно, а выполнять — никому. Не хватает бита x.',check:W=>W.f.lsl&&W.f.lsl['/home/dev/deploy.sh']},
+  {t:'quiz',h:'Что означает `-rw-r--r--`?',o:['Владелец читает и пишет, остальные только читают','Все могут всё','Только владелец может читать','Файл исполняемый для всех'],a:0,ex:'Первый символ — тип (- файл). Дальше тройки rw- (владелец), r-- (группа), r-- (остальные). Числом это 644.'},
+  {t:'task',h:'Почини и запусти',p:'Дай скрипту право на выполнение и запусти его.',hints:['chmod умеет добавить отдельный бит.','chmod +x <файл>, затем ./<файл>','chmod +x deploy.sh && ./deploy.sh'],sol:['chmod +x deploy.sh && ./deploy.sh'],
+   done:'Теперь права rwxr-xr-x (755). Кстати, `bash deploy.sh` сработал бы и без x: тогда исполняется bash, а скрипт он просто читает.',check:W=>W.f.execOk==='/home/dev/deploy.sh'},
+  {t:'task',h:'Закрой секреты',p:'Файл /etc/shop/db.env с паролем от базы может прочитать любой пользователь сервера. Сделай так, чтобы его читал только сервис shop: владелец shop, права только для владельца.',hints:['Сначала посмотри права: ls -l /etc/shop/db.env. Файл принадлежит root, поэтому понадобится sudo.','sudo chown <пользователь>:<группа> <файл>, потом sudo chmod <права> <файл>','sudo chown shop:shop /etc/shop/db.env && sudo chmod 600 /etc/shop/db.env'],sol:['sudo chown shop:shop /etc/shop/db.env && sudo chmod 600 /etc/shop/db.env'],
+   done:'rw------- shop shop. Попробуй `cat /etc/shop/db.env` от своего пользователя: Permission denied — так и задумано.',check:W=>ownerOf(W,'/etc/shop/db.env').startsWith('shop:')&&/^[46]00$/.test(permOf(W,'/etc/shop/db.env'))},
+  {t:'quiz',h:'Скрипт не запускается, коллега советует `chmod 777`. Что не так?',o:['Любой пользователь сервера сможет изменить скрипт и подсунуть свой код','Ничего, это стандартная практика','777 работает только для папок','Скрипт станет медленнее'],a:0,ex:'777 даёт запись всем. Если скрипт потом запускают от root или из cron, любой пользователь получает выполнение своего кода от root. Правильно: 755 или 700.'},
+ ]},
+ l19:{title:'systemd и cron',xp:25,setup:svcWorld,steps:[
+  {t:'lecture',pages:[
+   {h:'systemd управляет сервисами',p:'Почти все сервисы в Linux — это юниты systemd. Он запускает их при загрузке, перезапускает при падении и пишет их вывод в журнал.',code:'systemctl status app        # что с сервисом\nsystemctl restart app       # перезапустить\nsystemctl enable app        # автозапуск при загрузке\nsystemctl enable --now app  # включить и сразу запустить\njournalctl -u app           # журнал сервиса',terms:[['start','запустить сейчас'],['enable','запускать при каждой загрузке сервера'],['юнит','файл описания сервиса в /etc/systemd/system/']]},
+   {h:'cron: задачи по расписанию',p:'cron запускает команды по расписанию. Каждая строка crontab — пять полей времени и команда.',code:'┌──── минута (0–59)\n│ ┌── час (0–23)\n│ │ ┌ день месяца (1–31)\n│ │ │ ┌ месяц (1–12)\n│ │ │ │ ┌ день недели (0–7, 0 и 7 — воскресенье)\n│ │ │ │ │\n0 3 * * *     /opt/backup.sh    # каждый день в 03:00\n*/15 * * * *  /opt/check.sh     # каждые 15 минут'}]},
+  {t:'task',h:'Метрики пропали',p:'После ночной перезагрузки сервера в Grafana пропали метрики prod-web-01. Их собирает сервис node-exporter. Проверь, включён ли у него автозапуск.',hints:['У systemctl есть подкоманда, которая отвечает enabled или disabled.','systemctl is-enabled <сервис> или systemctl status <сервис>','systemctl is-enabled node-exporter'],sol:['systemctl is-enabled node-exporter'],
+   done:'disabled: сервис когда-то запустили руками, а автозапуск не включили. После перезагрузки он не поднялся.',check:W=>W.f.isEnabled==='node-exporter'||W.f.svcStatus==='node-exporter'},
+  {t:'quiz',h:'Чем `systemctl enable` отличается от `systemctl start`?',o:['enable — автозапуск при загрузке, start — запуск прямо сейчас','Это одно и то же','enable запускает сервис дважды','start включает автозапуск'],a:0,ex:'Поэтому есть удобный `enable --now`: включить автозапуск и сразу запустить.'},
+  {t:'task',h:'Почини навсегда',p:'Включи автозапуск node-exporter и сразу запусти его.',hints:['Нужно два действия, и у enable есть флаг, который делает оба.','systemctl enable --now <сервис>','systemctl enable --now node-exporter'],sol:['systemctl enable --now node-exporter'],
+   done:'Сервис работает и переживёт следующую перезагрузку.',check:W=>W.svc['node-exporter'].enabled&&W.svc['node-exporter'].active},
+  {t:'task',h:'Проверь журнал',p:'Убедись по журналу systemd, что сервис стартовал.',hints:['Журнал сервиса читает journalctl.','journalctl -u <сервис>','journalctl -u node-exporter'],sol:['journalctl -u node-exporter'],
+   done:'Видно и остановку перед перезагрузкой, и новый старт. Флаг -f показывает журнал в реальном времени, --since "1 hour ago" — за последний час.',check:W=>W.f.journal==='node-exporter'},
+  {t:'edit',h:'Настрой бэкап по расписанию',p:'Добавь в crontab задачу: каждый день в 03:30 запускать /home/dev/backup.sh, а вывод и ошибки дописывать в /var/log/backup.log.',file:'crontab -e',path:'/var/spool/cron/dev',hint:'Строка целиком: `30 3 * * * /home/dev/backup.sh >> /var/log/backup.log 2>&1`',
+   checks:[{name:'Каждый день в 03:30',test:t=>/^\s*30\s+0?3\s+\*\s+\*\s+\*\s+\S/m.test(t)},{name:'Запускается /home/dev/backup.sh',test:t=>/^\s*30\s+0?3\s+\*\s+\*\s+\*\s+.*\/home\/dev\/backup\.sh/m.test(t)},{name:'Вывод дописывается в /var/log/backup.log (>>)',test:t=>/backup\.sh.*>>\s*\/var\/log\/backup\.log/.test(t)},{name:'Ошибки тоже идут в лог (2>&1)',test:t=>/backup\.log\s*2>&1/.test(t)}],
+   sample:'# м  ч  д  мес  дн_нед  команда\n30 3 * * * /home/dev/backup.sh >> /var/log/backup.log 2>&1\n',done:'Без перенаправления вывод cron уходит в локальную почту, которую никто не читает. А 2>&1 отправляет ошибки туда же, куда обычный вывод.'},
+  {t:'quiz',h:'`*/15 9-18 * * 1-5` — это...',o:['Каждые 15 минут с 9 до 18 в будние дни','В 9:15 и 18:15 каждый день','Каждые 15 часов','Раз в 15 дней'],a:0,ex:'*/15 — каждые 15 минут, 9-18 — часы, 1-5 — с понедельника по пятницу. Проверять выражения удобно на crontab.guru.'},
+ ]},
+ l20:{title:'Bash-скрипт',xp:25,setup:bashWorld,steps:[
+  {t:'lecture',pages:[
+   {h:'Скрипт — это команды в файле',p:'Всё, что делаешь руками больше двух раз, стоит сохранить в скрипт. Первая строка (shebang) говорит, чем исполнять файл.',code:'#!/usr/bin/env bash\nset -euo pipefail          # падать на любой ошибке\n\nURL="http://localhost/healthz"   # без пробелов вокруг =\n\nif curl -fsS "$URL" > /dev/null; then\n  echo "OK"\nelse\n  echo "ERROR: $URL не отвечает" >&2\n  exit 1\nfi'},
+   {h:'Код выхода — язык скриптов',p:'Каждая команда возвращает число: 0 — успех, всё остальное — ошибка. Его видно в `$?`. На коде выхода работают if, &&, ||, cron и CI: шаг пайплайна краснеет, когда команда вернула не 0.',terms:[['$?','код выхода последней команды'],['set -e','остановить скрипт на первой ошибке'],['set -u','ошибка при обращении к несуществующей переменной'],['set -o pipefail','труба считается упавшей, если упала любая её часть'],['curl -f','вернуть ошибку на HTTP 4xx/5xx, а не только при обрыве связи'],['"$VAR"','переменные берут в кавычки, иначе пробелы ломают команды']]}]},
+  {t:'quiz',h:'`grep ERROR app.log` ничего не нашёл. Что покажет `echo $?`?',o:['1','0','ERROR','Пустую строку'],a:0,ex:'У grep код 1 значит «совпадений нет», 2 — настоящая ошибка, например нет файла. Поэтому set -e может неожиданно уронить скрипт на grep без совпадений.'},
+  {t:'edit',h:'Напиши проверку здоровья',p:'Допиши healthcheck.sh: строгий режим, адрес в переменной URL (http://localhost/healthz), curl с флагом -f. Если проверка прошла — выведи OK, если нет — ERROR и выйди с кодом 1.',file:'healthcheck.sh',path:'/home/dev/healthcheck.sh',hint:'Всё есть в первой карточке лекции: `set -euo pipefail`, `URL="http://localhost/healthz"`, `if curl -fsS "$URL" > /dev/null; then echo "OK"; else echo "ERROR"; exit 1; fi`',
+   checks:[{name:'Shebang для bash',test:t=>/^#!\s*(\/usr\/bin\/env\s+bash|\/bin\/bash)/.test(t)},{name:'Строгий режим (set -e… и pipefail)',test:t=>/^\s*set\s+-\w*e\w*/m.test(t)&&/pipefail/.test(t)},{name:'Переменная URL с адресом /healthz',test:t=>/^\s*URL=["']?http:\/\/localhost\/healthz["']?\s*$/m.test(t)},{name:'curl с -f по "$URL" в кавычках',test:t=>t.split('\n').some(l=>/\bcurl\b/.test(l)&&/(\s-\w*f\w*\b|--fail)/.test(l)&&/"\$\{?URL\}?"/.test(l))},{name:'Выводит OK при успехе',test:t=>/echo\s+["']?OK/.test(t)},{name:'Выход с кодом 1 при ошибке',test:t=>/exit\s+1\b/.test(t)}],
+   sample:'#!/usr/bin/env bash\nset -euo pipefail\n\nURL="http://localhost/healthz"\n\nif curl -fsS "$URL" > /dev/null; then\n  echo "OK"\nelse\n  echo "ERROR: $URL не отвечает" >&2\n  exit 1\nfi\n',done:'Скрипт готов. Запустим.'},
+  {t:'task',h:'Запусти',p:'Сделай скрипт исполняемым и запусти его.',hints:['Вспомни урок про права: не хватает бита x.','chmod +x <файл> && ./<файл>','chmod +x healthcheck.sh && ./healthcheck.sh'],sol:['chmod +x healthcheck.sh && ./healthcheck.sh'],
+   done:'OK: nginx отвечает.',check:W=>W.f.execOk==='/home/dev/healthcheck.sh'},
+  {t:'task',h:'Поймай падение',p:'Останови nginx, запусти проверку и посмотри код выхода скрипта. Должна быть 1 — тогда cron или CI заметят проблему.',hints:['Останови сервис через systemctl и снова запусти скрипт.','После скрипта выведи код выхода: echo $?. Несколько команд в одной строке разделяются точкой с запятой.','systemctl stop nginx; ./healthcheck.sh; echo $?'],sol:['systemctl stop nginx; ./healthcheck.sh; echo $?'],
+   done:'Код 1: такой скрипт можно ставить в cron или в CI. Не забудь вернуть nginx: `systemctl start nginx`.',check:W=>W.f.sawExit1},
+ ]},
+ l21:{title:'DNS и /etc/hosts',xp:25,setup:dnsWorld,steps:[
+  {t:'lecture',pages:[
+   {h:'Как имя превращается в адрес',p:'Компьютеры общаются по IP-адресам, люди помнят имена. Перед каждым запросом система ищет адрес: сначала в файле /etc/hosts, потом спрашивает DNS-сервер.',code:'curl shop.local\n  │\n  ├─ 1. /etc/hosts   ← есть запись? берём её, DNS не спрашиваем\n  └─ 2. DNS-сервер   ← A-запись shop.local → 10.0.0.15\n  │\n  └─ TCP на 10.0.0.15:80 → HTTP-запрос'},
+   {h:'Инструменты диагностики',code:'dig shop.local             # что отвечает DNS\ndig +short shop.local      # только адрес\ngetent hosts shop.local    # что видит система (вместе с /etc/hosts)\ncurl -v http://shop.local  # куда реально подключаемся\nss -tlnp                   # какие порты слушает этот сервер',terms:[['A-запись','имя → IPv4-адрес'],['TTL','сколько секунд ответ DNS можно кешировать'],['NXDOMAIN','такого имени не существует']]}]},
+  {t:'task',h:'Воспроизведи',p:'Пользователи открывают shop.local без проблем, а скрипты на prod-web-01 падают по таймауту. Проверь доступность сайта с этого сервера.',hints:['HTTP-запрос из терминала — curl.','curl <имя сайта>','curl shop.local'],sol:['curl shop.local'],
+   done:'Таймаут: соединение не устанавливается. Интересно, куда вообще стучится curl.',check:W=>W.f.curlHost==='shop.local'},
+  {t:'task',h:'Спроси DNS',p:'Узнай, какой IP-адрес у shop.local по данным DNS.',hints:['Классический инструмент — dig.','dig <имя> или nslookup <имя>','dig shop.local'],sol:['dig shop.local'],
+   done:'DNS отвечает 10.0.0.15, и у пользователей всё работает. Значит, дело в самом сервере.',check:W=>W.f.dig==='shop.local'},
+  {t:'task',h:'Куда идёт curl?',p:'Посмотри подробно, к какому адресу на самом деле подключается curl.',hints:['У curl есть подробный режим.','curl -v <адрес>','curl -v shop.local'],sol:['curl -v shop.local'],
+   done:'Trying 10.0.0.99 — это не тот адрес, что в DNS. Его подменили локально.',check:W=>W.f.curlV},
+  {t:'quiz',h:'Почему curl идёт на 10.0.0.99, если DNS отвечает 10.0.0.15?',o:['Запись в /etc/hosts имеет приоритет над DNS','DNS-кеш браузера','curl не умеет DNS','Сломан DNS-сервер'],a:0,ex:'Система сначала смотрит /etc/hosts. Временная запись с переезда так и осталась — классика.'},
+  {t:'edit',h:'Убери старую запись',p:'Удали или закомментируй устаревшую строку для shop.local в /etc/hosts. Остальные записи не трогай.',file:'/etc/hosts',path:'/etc/hosts',hint:'Поставь # в начало строки `10.0.0.99 shop.local` или удали её.',
+   checks:[{name:'shop.local больше не указывает на 10.0.0.99',test:t=>!t.split('\n').some(l=>/^\s*10\.0\.0\.99\b.*shop\.local/.test(l))},{name:'localhost на месте',test:t=>/^\s*127\.0\.0\.1\s+localhost/m.test(t)}],
+   sample:'127.0.0.1   localhost\n127.0.1.1   prod-web-01\n',done:'Теперь имя резолвится через DNS.'},
+  {t:'task',h:'Проверь',p:'Убедись, что сайт с сервера открывается.',hints:['Тот же запрос, что в начале.','curl <имя>','curl shop.local'],sol:['curl shop.local'],
+   done:'200 OK. В разборе стоит записать правило: временные записи в /etc/hosts — только с датой и тикетом на удаление.',check:W=>W.f.curlOk==='shop.local'},
+  {t:'quiz',h:'Ты поменял A-запись в DNS, а часть пользователей ещё час ходит на старый адрес. Почему?',o:['Старый ответ закеширован на время TTL','DNS обновляется раз в сутки','Нужно перезагрузить сервер','Пользователи не почистили cookies'],a:0,ex:'Резолверы кешируют ответ на TTL секунд. Перед переездом TTL заранее снижают, например до 60 секунд.'},
+ ]},
+ l22:{title:'Ветки и Pull Request',xp:25,setup:gitWorld,steps:[
+  {t:'lecture',pages:[
+   {h:'Git хранит историю',p:'Коммит — снимок проекта с сообщением и автором. Ветка — подвижный указатель на цепочку коммитов. main — то, что едет в прод.',code:'main:        A ── B ─────────── M   (слияние после ревью)\n                   \\            /\nfeature/x:          C ── D ───┘\n\ngit switch -c feature/x\ngit add . && git commit -m "feat: ..."\ngit push -u origin feature/x   # и открыть Pull Request'},
+   {h:'GitHub Flow',p:'Короткая ветка на каждую задачу → Pull Request → ревью и зелёный CI → слияние в main. Прямой push в main обычно запрещён правилом защиты ветки.',terms:[['commit','снимок изменений с сообщением'],['branch','отдельная линия работы'],['push','отправить коммиты на сервер'],['Pull Request','просьба влить ветку: место для ревью и CI'],['conventional commits','сообщения вида feat:, fix:, ci: — понятная история']]}]},
+  {t:'task',h:'Осмотрись',p:'Ты в репозитории shop. Узнай, в какой ты ветке и есть ли незакоммиченные изменения.',hints:['Состояние репозитория показывает одна команда git.','git status','git status'],sol:['git status'],
+   done:'Ветка main, всё чисто. Работать прямо в main не будем.',check:W=>W.f.gstatus},
+  {t:'task',h:'Новая ветка',p:'Тебе нужно увеличить таймаут API. Создай ветку feature/api-timeout и переключись на неё.',hints:['Современная команда — git switch, у неё есть флаг создания.','git switch -c <ветка> или git checkout -b <ветка>','git switch -c feature/api-timeout'],sol:['git switch -c feature/api-timeout'],
+   done:'Ветка создана от текущего main. Префикс feature/ или fix/ сразу говорит, что внутри.',check:W=>W.g.branch==='feature/api-timeout'},
+  {t:'edit',h:'Внеси правку',p:'В config.yaml увеличь api.timeout с 5s до 30s.',file:'config.yaml',path:'/home/dev/shop/config.yaml',hint:'Строка `timeout: 5s` → `timeout: 30s`.',
+   checks:[{name:'timeout: 30s',test:t=>/^\s+timeout:\s*30s\s*$/m.test(t)},{name:'Остальной конфиг на месте',test:t=>/port:\s*8080/.test(t)&&/^api:/m.test(t)}],
+   onSave:W=>{if(!W.g.modified.includes('config.yaml'))W.g.modified.push('config.yaml')},sample:'server:\n  port: 8080\napi:\n  timeout: 30s\n',done:'Файл изменён, git status его увидит.'},
+  {t:'task',h:'Отправь на ревью',p:'Закоммить изменение с понятным сообщением и отправь ветку на GitHub.',hints:['add → commit -m → push. Новую ветку при первом push нужно связать с сервером.','git push -u origin <ветка>','git add . && git commit -m "feat: api timeout 30s" && git push -u origin feature/api-timeout'],sol:['git add . && git commit -m "feat: api timeout 30s" && git push -u origin feature/api-timeout'],
+   done:'GitHub сразу предлагает ссылку на Pull Request. Дальше — ревью коллег и зелёный CI.',check:W=>W.g.remote.includes('feature/api-timeout')&&(W.g.pushed['feature/api-timeout']||0)>2},
+  {t:'quiz',h:'Ты пушишь прямо в main и получаешь «protected branch». Зачем так настроено?',o:['Изменения в main должны пройти ревью и CI через Pull Request','GitHub никому не разрешает push в main','Нужно сначала сделать git pull','Ветка main удалена'],a:0,ex:'Защита ветки — правило репозитория: в main попадает только то, что прошло проверки.'},
+  {t:'quiz',h:'`git pull` — это...',o:['git fetch + git merge','git push наоборот, только для main','Скачать репозиторий заново','Откатить последний коммит'],a:0,ex:'fetch скачивает новые коммиты, merge вливает их в текущую ветку. С --rebase вместо merge будет rebase.'},
+ ]},
+ l23:{title:'Конфликт слияния',xp:25,setup:conflictWorld,steps:[
+  {t:'lecture',pages:[
+   {h:'Откуда берутся конфликты',p:'Пока ты работал в ветке, в main влили чужие изменения в те же строки. Git не знает, чья версия правильная, и просит решить человека.',code:'<<<<<<< HEAD\n  timeout: 30s     ← твоя ветка\n=======\n  timeout: 10s     ← то, что пришло из main\n  retries: 3\n>>>>>>> main'},
+   {h:'Как разрешить',p:'1. Открой файл, оставь правильный итог, удали маркеры.\n2. `git add файл` — пометить конфликт решённым.\n3. `git commit` — завершить слияние.\nЧасто правильный итог — объединение обеих правок, а не выбор одной.',terms:[['merge','влить ветку; история сохраняется с merge-коммитом'],['rebase','переписать свои коммиты поверх свежей ветки; не для общих веток'],['--force','перезаписать историю на сервере; в общей ветке опасно']]}]},
+  {t:'task',h:'Подтяни main',p:'Пока шло ревью, в main влили правку Олега: ретраи для API. CI требует свежую ветку. Влей main в свою ветку feature/api-timeout.',hints:['Слияние другой ветки в текущую — git merge.','git merge <ветка>','git merge main'],sol:['git merge main'],
+   done:'CONFLICT: вы с Олегом меняли один и тот же блок api.',check:W=>W.f.conflict},
+  {t:'task',h:'Где конфликт?',p:'Посмотри, какие файлы нужно разрешить.',hints:['Та же команда, что показывает состояние репозитория.','git status','git status'],sol:['git status'],
+   done:'both modified: config.yaml. Git ждёт, пока ты почистишь файл и сделаешь git add.',check:W=>W.f.statusConflict},
+  {t:'edit',h:'Разреши конфликт',p:'Сохрани обе правки: твой timeout 30s и retries: 3 от Олега. Удали маркеры конфликта.',file:'config.yaml',path:'/home/dev/shop/config.yaml',hint:'Итог блока api: две строки — `  timeout: 30s` и `  retries: 3`.',
+   checks:[{name:'Маркеров <<<<<<< ======= >>>>>>> не осталось',test:t=>!/^(<<<<<<<|=======|>>>>>>>)/m.test(t)},{name:'timeout: 30s (твоя правка)',test:t=>/^\s+timeout:\s*30s\s*$/m.test(t)&&!/timeout:\s*10s/.test(t)},{name:'retries: 3 (правка Олега)',test:t=>/^\s+retries:\s*3\s*$/m.test(t)}],
+   sample:'server:\n  port: 8080\napi:\n  timeout: 30s\n  retries: 3\n',done:'Файл чистый. Осталось сказать git, что конфликт решён.'},
+  {t:'task',h:'Заверши слияние',p:'Пометь конфликт решённым, закоммить слияние и отправь ветку.',hints:['git add, затем git commit. Для merge-коммита сообщение уже заготовлено: подойдёт --no-edit.','git add config.yaml && git commit --no-edit && git push','git add config.yaml && git commit --no-edit && git push'],sol:['git add config.yaml && git commit --no-edit && git push'],
+   done:'Ветка свежая, CI перезапустится, и PR можно вливать.',check:W=>W.f.merged&&W.g.pushed['feature/api-timeout']===W.g.branches['feature/api-timeout'].length},
+  {t:'quiz',h:'Коллега после rebase делает `git push --force` в общую ветку develop. Чем это опасно?',o:['Перезапишет историю на сервере и сотрёт чужие коммиты','Ничем, это обычная практика','Удалит репозиторий','Отключит CI'],a:0,ex:'Если очень нужно, есть `--force-with-lease`: он откажется, если на сервере появились чужие коммиты. В общие ветки лучше не форсить вообще.'},
+ ]},
+ l24:{title:'Пишем Dockerfile',xp:30,setup:dockerfileWorld,steps:[
+  {t:'lecture',pages:[
+   {h:'Образ собирается слоями',p:'Каждая инструкция Dockerfile — слой. Docker кеширует слои: если инструкция и её файлы не менялись, слой берётся из кеша. Как только слой изменился, все следующие собираются заново.',code:'FROM node:22-alpine      # базовый образ\nWORKDIR /app\nCOPY package*.json ./    # сначала только зависимости\nRUN npm ci               # кешируется, пока не менялся package.json\nCOPY . .                 # потом код: меняется часто\nRUN npm run build'},
+   {h:'Multi-stage: собрать в одном, запустить в другом',p:'Компиляторы и dev-зависимости нужны только для сборки. В финальный образ копируют лишь результат — он становится в разы меньше, быстрее качается и содержит меньше уязвимостей.',code:'FROM node:22-alpine AS build\n...\nRUN npm run build\n\nFROM node:22-alpine\nWORKDIR /app\nCOPY --from=build /app/dist ./dist\nCOPY --from=build /app/node_modules ./node_modules\nUSER node\nCMD ["node", "dist/server.js"]'},
+   {h:'Правила хорошего образа',terms:[['Фиксируй тег','node:22-alpine, а не latest: сборка повторяема'],['Не root','USER node: если приложение взломают, у атакующего меньше прав'],['CMD в exec-форме','["node", "server.js"]: процесс получает сигнал остановки'],['.dockerignore','не тащить в образ node_modules, .git и секреты'],['npm ci','ставит ровно то, что в package-lock.json']]}]},
+  {t:'task',h:'Собери как есть',p:'Ты в папке проекта shop. Собери образ из текущего Dockerfile с тегом shop:1.0 и посмотри его размер.',hints:['docker build с флагом тега и контекстом сборки (точка). Список образов — docker images.','docker build -t <имя:тег> . && docker images','docker build -t shop:1.0 . && docker images'],sol:['docker build -t shop:1.0 . && docker images'],
+   done:'1.12 ГБ ради небольшого API: внутри компиляторы, исходники и все dev-зависимости.',check:W=>W.f.built&&W.f.built['shop:1.0']&&W.f.images},
+  {t:'quiz',h:'Ты поменял одну строку в src, а сборка снова долго ставит зависимости. Почему?',o:['COPY . . стоит до npm install, и любая правка кода сбрасывает кеш','Docker не умеет кешировать','npm всегда качает заново','Нужно чистить кеш вручную'],a:0,ex:'Слой COPY . . меняется при любой правке, а все слои после него пересобираются. Копируй package*.json и ставь зависимости до копирования кода.'},
+  {t:'edit',h:'Перепиши Dockerfile',p:'Сделай образ правильным: зафиксированный тег вместо latest, multi-stage сборка, зависимости через npm ci до копирования кода, финальный запуск не от root, CMD в exec-форме.',file:'Dockerfile',path:'/home/dev/shop/Dockerfile',hint:'Возьми за основу вторую карточку лекции и добавь сверху стадию build: COPY package*.json ./, RUN npm ci, COPY . ., RUN npm run build.',
+   checks:[{name:'Тег зафиксирован (не latest)',test:t=>{const f=[...t.matchAll(/^\s*FROM\s+(\S+)/gim)].map(m=>m[1]);return f.length>0&&f.every(x=>/:/.test(x)&&!/:latest$/.test(x))}},
+    {name:'Multi-stage: стадия AS build и COPY --from',test:t=>/^\s*FROM\s+\S+\s+AS\s+\w+/im.test(t)&&(t.match(/^\s*FROM\s/gim)||[]).length>=2&&/COPY\s+--from=/i.test(t)},
+    {name:'package*.json и npm ci до COPY . .',test:t=>{const L=t.split('\n'),iP=L.findIndex(l=>/COPY\s+package/.test(l)),iC=L.findIndex(l=>/RUN\s+npm\s+ci\b/.test(l)),iA=L.findIndex(l=>/^\s*COPY\s+\.\s+\./.test(l));return iP>=0&&iC>iP&&(iA<0||iA>iC)}},
+    {name:'Финальная стадия не от root (USER)',test:t=>/^\s*USER\s+(?!root\b)\S+/im.test(t.split(/^\s*FROM\s/im).pop())},
+    {name:'CMD в exec-форме ["…"]',test:t=>/^\s*CMD\s+\[\s*"/m.test(t)}],
+   sample:'FROM node:22-alpine AS build\nWORKDIR /app\nCOPY package*.json ./\nRUN npm ci\nCOPY . .\nRUN npm run build\n\nFROM node:22-alpine\nWORKDIR /app\nCOPY --from=build /app/dist ./dist\nCOPY --from=build /app/node_modules ./node_modules\nUSER node\nCMD ["node", "dist/server.js"]\n',done:'Dockerfile сохранён. Пересоберём и сравним.'},
+  {t:'task',h:'Сравни',p:'Собери новый образ shop:1.1 и сравни размеры.',hints:['Та же команда сборки, другой тег.','docker build -t shop:1.1 . && docker images','docker build -t shop:1.1 . && docker images'],sol:['docker build -t shop:1.1 . && docker images'],
+   done:'168 МБ вместо 1.12 ГБ — почти в 7 раз меньше. Деплой быстрее, уязвимостей меньше.',check:W=>W.f.built&&W.f.built['shop:1.1']&&W.f.built['shop:1.1'].froms.length>1},
+  {t:'quiz',h:'Зачем нужен .dockerignore?',o:['Не отправлять в сборку node_modules, .git и секреты','Чтобы Docker игнорировал ошибки','Чтобы не скачивать базовый образ','Это замена Dockerfile'],a:0,ex:'Без него COPY . . унесёт в образ всё подряд, включая .env с паролями.'},
+ ]},
+ l25:{title:'Docker Compose',xp:25,setup:composeWorld,steps:[
+  {t:'lecture',pages:[
+   {h:'Весь стек одним файлом',p:'Приложению нужны база, кеш, воркер — запускать каждый контейнер руками неудобно. Docker Compose описывает весь стек в одном YAML и поднимает его одной командой.',code:'services:\n  api:\n    image: shop:1.1\n    environment:\n      DATABASE_URL: postgres://shop:secret@db:5432/shop\n    depends_on: [db]\n  db:\n    image: postgres:16\n    environment:\n      POSTGRES_PASSWORD: secret\n    volumes:\n      - db-data:/var/lib/postgresql/data\nvolumes:\n  db-data:'},
+   {h:'Сеть и данные',p:'Compose создаёт общую сеть, и сервисы находят друг друга по имени: api подключается к хосту db. У каждого контейнера свой localhost, поэтому localhost:5432 из api — это сам api, а не база. Данные базы держат в volume: контейнер можно пересоздать, данные останутся.',code:'docker compose up -d     # поднять в фоне\ndocker compose ps        # статус\ndocker compose logs api  # логи сервиса\ndocker compose down      # остановить и удалить контейнеры'}]},
+  {t:'edit',h:'Добавь базу',p:'Опиши в compose.yaml сервис db на postgres:16 с паролем и volume для данных. api подключи к нему по имени сервиса и сделай зависимым от db.',file:'compose.yaml',path:'/home/dev/shop/compose.yaml',hint:'Ориентируйся на первую карточку лекции. Не забудь объявить volume в конце файла: `volumes:` и под ним `  db-data:`.',checks:COMPOSE_CHECKS,
+   sample:'services:\n  api:\n    image: shop:1.1\n    ports:\n      - "8080:8080"\n    environment:\n      DATABASE_URL: postgres://shop:secret@db:5432/shop\n    depends_on:\n      - db\n  db:\n    image: postgres:16\n    environment:\n      POSTGRES_USER: shop\n      POSTGRES_PASSWORD: secret\n      POSTGRES_DB: shop\n    volumes:\n      - db-data:/var/lib/postgresql/data\n\nvolumes:\n  db-data:\n',done:'Стек описан. Поднимаем.'},
+  {t:'task',h:'Подними стек',p:'Запусти стек в фоне и убедись, что оба сервиса работают.',hints:['docker compose: подкоманда запуска с флагом фона, потом статус.','docker compose up -d && docker compose ps','docker compose up -d && docker compose ps'],sol:['docker compose up -d && docker compose ps'],
+   done:'api и db работают. `docker compose logs api` покажет подключение к базе.',check:W=>W.f.composeUp&&W.compose&&W.compose.ok&&W.f.composePs},
+  {t:'quiz',h:'Почему api не может подключиться к базе по localhost:5432?',o:['У каждого контейнера свой localhost; к базе обращаются по имени сервиса db','Postgres не слушает 5432','Compose запрещает localhost','Нужно открыть порт 5432 наружу'],a:0,ex:'В сети compose имя сервиса работает как DNS-имя. Публиковать порт базы наружу для этого не нужно и даже вредно.'},
+  {t:'quiz',h:'Что будет с данными базы после `docker compose down`, если volume не описан?',o:['Пропадут вместе с контейнером','Сохранятся в образе postgres','Сохранятся в /tmp','Compose спросит, сохранить ли их'],a:0,ex:'Без volume данные живут в слое контейнера и удаляются вместе с ним. Volume переживает down и up, удалить его можно только явно: `down -v`.'},
+ ]},
+ l26:{title:'Terraform',xp:30,setup:tfWorld,steps:[
+  {t:'lecture',pages:[
+   {h:'Инфраструктура как код',p:'Вместо кликов в консоли облака серверы, сети и бакеты описывают в файлах. Код лежит в git, проходит ревью, и ту же инфраструктуру можно поднять повторно.',code:'resource "aws_instance" "web" {\n  ami           = "ami-0a1b2c3d4e5f67890"\n  instance_type = "t3.micro"\n  tags = { Name = "shop-web" }\n}'},
+   {h:'init → plan → apply',p:'`terraform init` скачивает провайдеры. `terraform plan` сравнивает код с реальностью и показывает, что изменится. `terraform apply` применяет план после подтверждения. Читай plan перед каждым apply — это главная защита.',code:'+    create    будет создан\n~    update    изменится на месте\n-    destroy   будет удалён\n-/+  replace   удалится и создастся заново (осторожно!)'},
+   {h:'State и дрейф',p:'Terraform помнит, что он создал, в файле состояния (state). Если ресурс поменяли руками в консоли, код и реальность расходятся — это дрейф. Следующий plan предложит вернуть всё «как в коде».',terms:[['state','что Terraform создал и как оно выглядит'],['remote state','state в общем хранилище с блокировкой, а не на ноутбуке'],['drift','реальность изменили в обход кода'],['провайдер','плагин для облака: aws, yandex, google']]}]},
+  {t:'task',h:'Инициализация',p:'Ты в папке infra с кодом инфраструктуры магазина. Подготовь её к работе.',hints:['Первая команда в любой папке Terraform.','terraform init','terraform init'],sol:['terraform init'],
+   done:'Провайдер AWS скачан и записан в .terraform.lock.hcl. Этот файл коммитят, чтобы у всех была одна версия.',check:W=>W.tf.inited},
+  {t:'task',h:'Что изменится?',p:'Посмотри, что Terraform собирается сделать с инфраструктурой.',hints:['Показать изменения без применения.','terraform plan','terraform plan'],sol:['terraform plan'],
+   done:'Создать бакет — ожидаемо. Но почему он хочет поменять instance_type сервера, если в код этого никто не трогал?',check:W=>W.f.tfPlan>=1},
+  {t:'quiz',h:'Откуда изменение t3.large → t3.micro?',o:['Кто-то поменял тип сервера руками в консоли — это дрейф','Terraform сам решил сэкономить','Ошибка провайдера','Так выглядит каждый plan'],a:0,ex:'В коде t3.micro, а в облаке t3.large. Apply «как есть» молча уменьшит сервер в разгар нагрузки.'},
+  {t:'edit',h:'Зафиксируй решение в коде',p:'Выяснилось: сервер увеличили осознанно, из-за нагрузки. Зафиксируй t3.large в коде, чтобы Terraform его не откатывал.',file:'main.tf',path:'/home/dev/infra/main.tf',hint:'В блоке aws_instance.web: `instance_type = "t3.large"`.',
+   checks:[{name:'instance_type = "t3.large"',test:t=>/instance_type\s*=\s*"t3\.large"/.test(t)},{name:'Бакет assets остался в коде',test:t=>/resource\s+"aws_s3_bucket"\s+"assets"/.test(t)}],
+   sample:'provider "aws" {\n  region = "eu-central-1"\n}\n\nresource "aws_instance" "web" {\n  ami           = "ami-0a1b2c3d4e5f67890"\n  instance_type = "t3.large"\n  tags = { Name = "shop-web" }\n}\n\nresource "aws_s3_bucket" "assets" {\n  bucket = "uptime-shop-assets"\n}\n',done:'Код снова совпадает с реальностью. Правильный порядок на будущее: сначала правка в коде, потом apply — не наоборот.'},
+  {t:'task',h:'Примени',p:'Убедись, что план теперь только создаёт бакет, и примени его.',hints:['Сначала plan, потом apply. Terraform попросит подтверждение — введи yes.','terraform plan, затем terraform apply и yes','terraform plan && terraform apply, затем yes'],sol:['terraform plan && terraform apply','yes'],
+   done:'1 added, 0 changed: бакет создан, сервер не тронут.',check:W=>W.tf.state.bucket&&W.tf.state.web==='t3.large'},
+  {t:'quiz',h:'Почему terraform.tfstate не хранят в git?',o:['В нём бывают секреты, а параллельные apply затрут друг друга','Он слишком большой','git не умеет JSON','Terraform запрещает'],a:0,ex:'State хранят удалённо (S3, Object Storage, Terraform Cloud) с блокировкой, чтобы двое не запустили apply одновременно.'},
+ ]},
+ l27:{title:'Ansible',xp:25,setup:ansWorld,steps:[
+  {t:'lecture',pages:[
+   {h:'Terraform создаёт, Ansible настраивает',p:'Ansible заходит на серверы по SSH и приводит их к описанному состоянию: пакеты, конфиги, сервисы, пользователи. Ставить агентов на серверы не нужно.',code:'inventory.ini        site.yml (playbook)\n[web]                - hosts: web\nweb-1                  become: true\nweb-2                  tasks:\n                         - apt: name=nginx state=present\n                         - service: name=nginx state=started'},
+   {h:'Описываешь состояние, а не шаги',p:'Задача «nginx: state: present» значит «пакет должен быть установлен», а не «выполни apt install». Если пакет уже стоит, Ansible ничего не делает. Это идемпотентность: плейбук можно запускать сколько угодно раз.',terms:[['inventory','список серверов и групп'],['playbook','сценарий: какие задачи на каких хостах'],['module','готовое действие: apt, service, copy, template'],['--check','пробный прогон без изменений'],['become','выполнять задачи от root через sudo']]}]},
+  {t:'task',h:'Проверь связь',p:'Ты в папке ansible. Убедись, что Ansible достаёт до всех серверов группы web.',hints:['Есть модуль ping, его запускают командой ansible (без -playbook).','ansible <группа> -i <инвентарь> -m ping','ansible web -i inventory.ini -m ping'],sol:['ansible web -i inventory.ini -m ping'],
+   done:'pong от обоих: SSH работает, Python на серверах есть.',check:W=>W.f.ansPing},
+  {t:'edit',h:'Напиши плейбук',p:'Сделай плейбук для группы web: с правами root поставить пакет nginx и запустить сервис nginx с автозапуском.',file:'site.yml',path:'/home/dev/ansible/site.yml',hint:'Две задачи: ansible.builtin.apt (name: nginx, state: present) и ansible.builtin.service (name: nginx, state: started, enabled: true). И не забудь hosts: web и become: true.',
+   checks:[{name:'Плейбук для группы web',test:t=>/hosts:\s*web\s*$/m.test(t)},{name:'Права root (become: true)',test:t=>/become:\s*(true|yes)\b/.test(t)},{name:'Пакет nginx ставится (apt, state: present)',test:t=>/\bapt:/.test(t)&&/name:\s*nginx/.test(t)&&/state:\s*present/.test(t)},{name:'nginx запущен и в автозапуске (service)',test:t=>/\b(service|systemd):/.test(t)&&/state:\s*started/.test(t)&&/enabled:\s*(true|yes)/.test(t)}],
+   sample:'- name: Веб-серверы\n  hosts: web\n  become: true\n  tasks:\n    - name: Установить nginx\n      ansible.builtin.apt:\n        name: nginx\n        state: present\n        update_cache: true\n\n    - name: Запустить nginx и включить автозапуск\n      ansible.builtin.service:\n        name: nginx\n        state: started\n        enabled: true\n',done:'Плейбук готов. На проде сначала смотрят пробный прогон.'},
+  {t:'task',h:'Пробный прогон',p:'Запусти плейбук в режиме проверки: Ansible покажет, что изменил бы, но ничего не тронет.',hints:['ansible-playbook с инвентарём и флагом проверки.','ansible-playbook -i <инвентарь> <плейбук> --check','ansible-playbook -i inventory.ini site.yml --check'],sol:['ansible-playbook -i inventory.ini site.yml --check'],
+   done:'changed=2 на каждом сервере: nginx будет установлен и запущен.',check:W=>W.f.ansCheck},
+  {t:'task',h:'Примени дважды',p:'Примени плейбук, потом запусти его ещё раз и сравни PLAY RECAP.',hints:['Тот же запуск без --check, два раза подряд.','ansible-playbook -i inventory.ini site.yml','ansible-playbook -i inventory.ini site.yml, затем то же самое ещё раз'],sol:['ansible-playbook -i inventory.ini site.yml','ansible-playbook -i inventory.ini site.yml'],
+   done:'Первый раз changed=2, второй — changed=0. Это и есть идемпотентность: повторный запуск безопасен.',check:W=>W.f.ansIdem},
+  {t:'quiz',h:'Когда Terraform, а когда Ansible?',o:['Terraform создаёт облачные ресурсы, Ansible настраивает то, что внутри серверов','Это одно и то же','Ansible только для Windows','Terraform только для Kubernetes'],a:0,ex:'Типичная связка: Terraform поднимает VM и сеть, Ansible ставит на них софт. В мире Kubernetes эту роль часто забирают образы и Helm.'},
+ ]},
+ l28:{title:'Service и Ingress',xp:25,setup:svcK8sWorld,steps:[
+  {t:'lecture',pages:[
+   {h:'Поды смертны, Service постоянен',p:'У каждого пода свой IP, и он меняется при пересоздании. Service даёт постоянное имя и адрес и балансирует трафик между подами. Каких именно — решает selector: Service берёт все поды с подходящими метками.',code:'Ingress shop.local/ ──► Service web:80 ──► поды с меткой app=web, порт 8080\n                         selector: app=web    10.42.1.7\n                                              10.42.2.4\n                                              10.42.3.9'},
+   {h:'Как это проверить',code:'kubectl get svc                  # сервисы\nkubectl describe svc web         # селектор и порты\nkubectl get endpoints web        # IP подов, куда идёт трафик\nkubectl get pods --show-labels   # метки подов',terms:[['Service','постоянный адрес и балансировка для группы подов'],['selector','какие метки должны быть у подов'],['Endpoints','реальные IP подов за сервисом'],['Ingress','вход снаружи по домену и пути']]}]},
+  {t:'task',h:'Куда уходит трафик?',p:'После переименования сайт отдаёт 503, хотя все поды web в Running. Проверь, на какие поды Service web отправляет трафик.',hints:['Реальные адреса за сервисом называются endpoints.','kubectl get endpoints <сервис>','kubectl get endpoints web'],sol:['kubectl get endpoints web'],
+   done:'<none>: у сервиса нет ни одного пода. Ingress шлёт трафик в пустоту, отсюда 503.',check:W=>W.f.ep>=1},
+  {t:'task',h:'Сравни метки',p:'Выясни, почему сервис не видит поды: сравни его селектор с метками подов.',hints:['Селектор виден в describe, метки — у get pods со специальным флагом.','kubectl describe svc web и kubectl get pods --show-labels','kubectl describe svc web && kubectl get pods --show-labels'],sol:['kubectl describe svc web && kubectl get pods --show-labels'],
+   done:'Сервис ищет app=shop-web, а у подов метка app=web.',check:W=>W.f.svcDesc&&W.f.showLabels},
+  {t:'quiz',h:'Почему endpoints пустые?',o:['Селектор сервиса не совпадает с метками подов','Поды не готовы','Сломан Ingress','Не хватает реплик'],a:0,ex:'Service не знает поды по именам — только по меткам. Одна опечатка в selector, и трафик идёт в никуда.'},
+  {t:'edit',h:'Почини Service',p:'Поправь селектор в service.yaml, чтобы он совпадал с метками подов.',file:'service.yaml',path:'/home/dev/k8s/service.yaml',hint:'`app: shop-web` → `app: web`',
+   checks:[{name:'selector app: web',test:t=>/selector:\s*\n\s+app:\s*web\s*$/m.test(t)},{name:'Порты на месте (80 → 8080)',test:t=>/port:\s*80\b/.test(t)&&/targetPort:\s*8080/.test(t)}],
+   sample:'apiVersion: v1\nkind: Service\nmetadata:\n  name: web\nspec:\n  selector:\n    app: web\n  ports:\n    - port: 80\n      targetPort: 8080\n',done:'Манифест исправлен. Осталось применить его к кластеру.'},
+  {t:'task',h:'Примени и проверь',p:'Примени манифест и убедись, что у сервиса появились endpoints.',hints:['Манифесты применяют командой apply с флагом файла.','kubectl apply -f <файл>, затем снова endpoints','kubectl apply -f service.yaml && kubectl get endpoints web'],sol:['kubectl apply -f service.yaml && kubectl get endpoints web'],
+   done:'Три IP подов за сервисом — 503 ушли.',check:W=>W.f.epOk},
+  {t:'quiz',h:'Чем Ingress отличается от Service типа LoadBalancer?',o:['Ingress — один вход для многих сервисов с маршрутизацией по домену и пути','Ничем','LoadBalancer работает только внутри кластера','Ingress нужен только для баз данных'],a:0,ex:'LoadBalancer создаёт отдельный облачный балансировщик на каждый сервис, а это дорого. Ingress-контроллер — один вход и правила для всех.'},
+ ]},
+ l29:{title:'Конфиги, секреты, пробы',xp:30,setup:cfgK8sWorld,steps:[
+  {t:'lecture',pages:[
+   {h:'Конфиг отдельно от образа',p:'Один образ едет в dev, stage и prod — меняются только настройки. Обычные настройки кладут в ConfigMap, пароли и токены — в Secret, и подставляют в под через переменные окружения. Secret хранится в base64 — это кодирование, а не шифрование.',code:'env:\n  - name: DB_PASSWORD\n    valueFrom:\n      secretKeyRef:\n        name: db          # имя Secret\n        key: password     # ключ внутри него\n\nkubectl create secret generic db --from-literal=password=...'},
+   {h:'Пробы: готов ли под и жив ли он',p:'readinessProbe отвечает на вопрос «можно ли слать трафик»: пока проверка не прошла, пода нет в endpoints сервиса. livenessProbe — «жив ли процесс»: если проверка падает, kubelet перезапускает контейнер.',code:'readinessProbe:\n  httpGet: { path: /healthz, port: 8080 }\nlivenessProbe:\n  httpGet: { path: /healthz, port: 8080 }\n  initialDelaySeconds: 15'},
+   {h:'Ресурсы',p:'requests — сколько ресурсов гарантировать поду, по ним планировщик выбирает ноду. limits — потолок: превысил лимит памяти — контейнер убит с OOMKilled. Без них один под может съесть всю ноду.',terms:[['requests','гарантированный минимум, по нему размещают поды'],['limits','максимум, выше которого нельзя'],['OOMKilled','контейнер убит за превышение лимита памяти'],['ConfigMap','несекретные настройки']]}]},
+  {t:'quiz',h:'Secret в Kubernetes хранится в base64. Это значит...',o:['Это кодирование: прочитать может любой, у кого есть доступ к Secret','Пароль надёжно зашифрован','Пароль хешируется','Его никто не может прочитать'],a:0,ex:'`echo UzNjcjN0 | base64 -d` — и пароль на экране. Поэтому доступ к Secret ограничивают через RBAC, а для чувствительного используют Vault и шифрование etcd.'},
+  {t:'edit',h:'Приведи деплоймент в порядок',p:'В deployment.yaml пароль лежит открытым текстом, нет проб и лимитов. Возьми пароль из Secret db (ключ password), добавь readinessProbe и livenessProbe на /healthz и задай requests и limits.',file:'deployment.yaml',path:'/home/dev/k8s/deployment.yaml',hint:'Все три блока есть в лекции. Они идут внутри контейнера, на одном уровне с image и env.',checks:DEPLOY_CHECKS,
+   sample:'apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: shop\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: shop\n  template:\n    metadata:\n      labels:\n        app: shop\n    spec:\n      containers:\n        - name: shop\n          image: shop:2.4\n          ports:\n            - containerPort: 8080\n          env:\n            - name: DB_PASSWORD\n              valueFrom:\n                secretKeyRef:\n                  name: db\n                  key: password\n          readinessProbe:\n            httpGet:\n              path: /healthz\n              port: 8080\n            periodSeconds: 5\n          livenessProbe:\n            httpGet:\n              path: /healthz\n              port: 8080\n            initialDelaySeconds: 15\n          resources:\n            requests:\n              cpu: 100m\n              memory: 128Mi\n            limits:\n              memory: 256Mi\n',done:'Манифест стал готов к проду. Выкатим его.'},
+  {t:'task',h:'Создай Secret и выкати',p:'Создай Secret db с паролем, примени манифест и дождись окончания выкатки.',hints:['Secret создают командой kubectl create secret generic с флагом --from-literal.','kubectl create secret generic db --from-literal=password=<пароль>, затем kubectl apply -f deployment.yaml и kubectl rollout status deployment/shop','kubectl create secret generic db --from-literal=password=S3cr3t-prod-pass && kubectl apply -f deployment.yaml && kubectl rollout status deployment/shop'],sol:['kubectl create secret generic db --from-literal=password=S3cr3t-prod-pass && kubectl apply -f deployment.yaml && kubectl rollout status deployment/shop','kubectl rollout status deployment/shop'],
+   done:'successfully rolled out. Если применить манифест раньше, чем создан Secret, поды повиснут в CreateContainerConfigError — запомни этот статус.',check:W=>W.f.deployApplied&&W.k8s.secrets.db&&W.k8s.pods.some(p=>p.app==='shop')&&W.k8s.pods.filter(p=>p.app==='shop'&&p.status!=='Terminating').every(p=>p.status==='Running')},
+  {t:'quiz',h:'livenessProbe ходит на /healthz, который проверяет базу. База легла на минуту. Что будет?',o:['Kubernetes начнёт перезапускать все поды приложения, хотя они живы','Ничего','Поды перестанут получать трафик, и всё','Kubernetes перезапустит базу'],a:0,ex:'Liveness должна проверять только сам процесс. Зависимости — дело readiness: под временно уберут из балансировки, но перезапускать не будут.'},
+ ]},
+ l30:{title:'Helm',xp:25,setup:helmWorld,steps:[
+  {t:'lecture',pages:[
+   {h:'Пакетный менеджер Kubernetes',p:'Приложение в Kubernetes — это десяток манифестов. Helm упаковывает их в chart с шаблонами и параметрами (values). Установленный chart называется release, и у каждого обновления есть номер ревизии.',code:'helm repo add shop https://charts.shop.local\nhelm install shop shop/shop                    # релиз shop из чарта shop/shop\nhelm upgrade shop shop/shop --set image.tag=2.5\nhelm history shop                              # ревизии\nhelm rollback shop 1                           # откат на ревизию 1'},
+   {h:'values: один чарт, разные окружения',p:'Всё, что отличается между окружениями, выносят в values: тег образа, число реплик, домен. Для прода — свой values-prod.yaml в git, а не длинная строка --set в истории терминала.',terms:[['chart','пакет шаблонов манифестов'],['values','параметры для шаблонов'],['release','установленный экземпляр чарта'],['revision','версия релиза после install, upgrade или rollback']]}]},
+  {t:'task',h:'Подключи репозиторий',p:'Чарты компании лежат по адресу https://charts.shop.local. Добавь этот репозиторий под именем shop.',hints:['helm repo с подкомандой добавления.','helm repo add <имя> <url>','helm repo add shop https://charts.shop.local'],sol:['helm repo add shop https://charts.shop.local'],
+   done:'Репозиторий подключён. `helm search repo shop` покажет, какие в нём чарты.',check:W=>W.f.helmRepo},
+  {t:'task',h:'Установи',p:'Установи релиз с именем shop из чарта shop/shop.',hints:['helm install: сначала имя релиза, потом чарт.','helm install <релиз> <репо/чарт>','helm install shop shop/shop'],sol:['helm install shop shop/shop'],
+   done:'REVISION 1, STATUS deployed. В кластере появились деплоймент и поды shop.',check:W=>W.helm.rel.shop&&W.helm.rel.shop.hist.length>=1},
+  {t:'task',h:'Обнови до 2.5',p:'Выкати новую версию приложения: тег образа 2.5.',hints:['helm upgrade с параметром --set.','helm upgrade <релиз> <чарт> --set image.tag=<тег>','helm upgrade shop shop/shop --set image.tag=2.5'],sol:['helm upgrade shop shop/shop --set image.tag=2.5'],
+   done:'REVISION 2. Проверь, как себя чувствуют поды.',check:W=>W.f.helm_upgrade==='2.5'},
+  {t:'task',h:'Откатись',p:'Поды новой версии падают. Найди номер последней рабочей ревизии и откатись на неё.',hints:['Сначала посмотри поды и историю релиза.','kubectl get pods, helm history shop, затем helm rollback shop <ревизия>','helm history shop && helm rollback shop 1'],sol:['kubectl get pods','kubectl get pods','helm history shop && helm rollback shop 1'],
+   done:'Откат — тоже новая ревизия (3), история не теряется. Поды снова на 2.4.',check:W=>W.f.helmRollback==='2.4'},
+  {t:'quiz',h:'Где правильно хранить настройки для прода?',o:['В values-prod.yaml в git','В длинной строке --set в истории терминала','Прямо в шаблонах чарта','В заметках дежурного'],a:0,ex:'Файл в git проходит ревью и воспроизводим. Выкатка через CI или GitOps (Argo CD) берёт его оттуда.'},
+ ]},
+ l31:{title:'SLO и error budget',xp:25,steps:[
+  {t:'lecture',pages:[
+   {h:'SLI, SLO, SLA',p:'SLI — что измеряем, например долю успешных быстрых запросов. SLO — цель команды: 99.9% за 30 дней. SLA — обещание клиенту с последствиями в договоре, обычно мягче SLO.',code:'SLI = хорошие запросы / все запросы\n    = (без 5xx и быстрее 300 мс) / все\n\nSLO: SLI ≥ 99.9% за скользящие 30 дней'},
+   {h:'Error budget',p:'Если цель 99.9%, то 0.1% — бюджет на ошибки. Пока бюджет есть, можно выкатывать фичи и рисковать. Кончился — команда переключается на надёжность.',code:'SLO       простой за 30 дней\n99%       7 ч 12 мин\n99.5%     3 ч 36 мин\n99.9%     43 мин\n99.95%    21 мин\n99.99%    4 мин 19 с'},
+   {h:'Burn rate',p:'Burn rate — во сколько раз быстрее нормы тратится бюджет. 1 — бюджет закончится ровно к концу окна. 14.4 — месячный бюджет сгорит за двое суток: повод будить дежурного.',terms:[['SLI','измеряемый показатель качества'],['SLO','целевое значение SLI'],['SLA','договорное обязательство'],['error budget','допустимая доля ошибок'],['burn rate','скорость расхода бюджета']]}]},
+  {t:'quiz',h:'SLO 99.9% за 30 дней. Сколько полного простоя он допускает?',o:['Около 43 минут','Около 4 минут','Около 7 часов','Около 9 часов'],a:0,ex:'30 × 24 × 60 = 43 200 минут, 0.1% от них — 43.2 минуты.'},
+  {t:'quiz',h:'За месяц было 10 миллионов запросов, SLO 99.9%. Сколько из них могут завершиться ошибкой?',o:['10 000','1 000','100 000','100'],a:0,ex:'0.1% от 10 000 000 = 10 000. Бюджет удобно считать в запросах: так он не зависит от трафика.'},
+  {t:'quiz',h:'К 10-му числу error budget на месяц израсходован. Что по практике SRE?',o:['Заморозить рискованные релизы и заняться надёжностью','Поднять SLO, чтобы мотивировать команду','Отключить алерты до конца месяца','Ничего, бюджет — формальность'],a:0,ex:'Бюджет — договорённость между продуктом и эксплуатацией: пока он исчерпан, приоритет у стабильности.'},
+  {t:'quiz',h:'Какой SLI лучше для API оформления заказа?',o:['Доля запросов без 5xx и быстрее 500 мс','Загрузка CPU сервера','Число подов','Свободное место на диске'],a:0,ex:'SLI должен отражать опыт пользователя. CPU и диск — возможные причины, а не симптомы.'},
+  {t:'edit',h:'Опиши SLO',p:'Сформулируй SLO для checkout API: цель от 99.5 до 99.95, окно 30 дней, SLI — отношение хороших запросов (без 5xx) ко всем.',file:'slo.yaml',
+   starter:'service: checkout-api\nslo:\n  objective:    # цель в процентах\n  window:       # окно\n  sli:\n    good:       # PromQL: хорошие запросы\n    total:      # PromQL: все запросы\n',
+   hint:'objective: 99.9\nwindow: 30d\ngood: sum(rate(http_requests_total{job="checkout",status!~"5.."}[5m]))\ntotal: sum(rate(http_requests_total{job="checkout"}[5m]))',
+   checks:[{name:'Цель от 99.5 до 99.95',test:t=>{const m=t.match(/objective:\s*([\d.]+)/);return !!m&&+m[1]>=99.5&&+m[1]<=99.95}},{name:'Окно 30 дней',test:t=>/window:\s*["']?(30d|28d|4w)\b/.test(t)},{name:'good — запросы без 5xx',test:t=>/good:\s*\S.*http_requests_total[^\n]*status\s*!~\s*["']5/.test(t)},{name:'total — все запросы',test:t=>/total:\s*\S.*http_requests_total/.test(t)}],
+   sample:'service: checkout-api\nslo:\n  objective: 99.9\n  window: 30d\n  sli:\n    good: sum(rate(http_requests_total{job="checkout",status!~"5.."}[5m]))\n    total: sum(rate(http_requests_total{job="checkout"}[5m]))\n',done:'Такое описание принимают инструменты вроде Sloth и Pyrra: они сами сгенерируют правила и алерты по burn rate.'},
+  {t:'quiz',h:'Почему SLO не ставят 100%?',o:['Это недостижимо и останавливает любые изменения','100% стоит слишком дёшево','Prometheus не умеет 100%','Так требует закон'],a:0,ex:'Сети, железо и зависимости иногда отказывают. 100% означает «ничего нельзя менять», а пользователь всё равно не отличит 99.99% от 100%.'},
+ ]},
+ l32:{title:'Сканирование образов',xp:30,setup:trivyWorld,steps:[
+  {t:'lecture',pages:[
+   {h:'Уязвимости приходят с базовым образом',p:'Твой код — малая часть образа. Остальное — ОС, библиотеки и рантайм из базового образа, и в них регулярно находят уязвимости (CVE). Сканер сравнивает версии пакетов в образе с базами уязвимостей.',code:'trivy image shop:1.2\ntrivy image --severity CRITICAL,HIGH shop:1.2\ntrivy image --exit-code 1 --severity CRITICAL shop:1.2   # для CI'},
+   {h:'Что с этим делать',p:'1. Обновить базовый образ — обычно закрывает большинство находок.\n2. Брать минимальные образы (alpine, slim, distroless): меньше пакетов — меньше уязвимостей.\n3. Сканировать в CI и ронять сборку на критичных находках.\n4. Регулярно пересобирать образы, даже если код не менялся.',terms:[['CVE','публичный идентификатор уязвимости'],['severity','критичность: CRITICAL, HIGH, MEDIUM, LOW'],['EOL','версия больше не поддерживается, патчей не будет'],['SBOM','список всех компонентов образа']]}]},
+  {t:'task',h:'Просканируй',p:'Перед релизом проверь образ shop:1.2 сканером уязвимостей.',hints:['Сканер — trivy, режим сканирования образов.','trivy image <образ>','trivy image shop:1.2'],sol:['trivy image shop:1.2'],
+   done:'1 CRITICAL и 3 HIGH. А Node 16 уже вне поддержки: исправлений для него не будет.',check:W=>W.f.trivy&&W.f.trivy['shop:1.2']},
+  {t:'quiz',h:'Откуда большинство найденных уязвимостей?',o:['Из базового образа: системные библиотеки и рантайм','Из нашего кода','Из Dockerfile','Из Kubernetes'],a:0,ex:'zlib, glibc, openssl, сам node — всё пришло из node:16. Поэтому первый шаг — свежий базовый образ.'},
+  {t:'edit',h:'Обнови базовый образ',p:'Переведи обе стадии на поддерживаемую версию Node (20 или новее) в минимальном варианте: alpine или slim.',file:'Dockerfile',path:'/home/dev/shop/Dockerfile',hint:'`FROM node:16 AS build` → `FROM node:22-alpine AS build`, и так же во второй стадии.',
+   checks:[{name:'Нет node:16 и latest',test:t=>!/node:(1\d|[0-9])\b|:latest\b/.test(t)},{name:'Node 20+ во всех стадиях',test:t=>{const f=[...t.matchAll(/^\s*FROM\s+(\S+)/gim)].map(m=>m[1]);return f.length>=2&&f.every(x=>/node:(2\d|[3-9]\d)/.test(x))}},{name:'Финальная стадия минимальная (alpine, slim, distroless)',test:t=>{const f=[...t.matchAll(/^\s*FROM\s+(\S+)/gim)].map(m=>m[1]);return /alpine|slim|distroless/.test(f[f.length-1]||'')}}],
+   sample:'FROM node:22-alpine AS build\nWORKDIR /app\nCOPY package*.json ./\nRUN npm ci\nCOPY . .\nRUN npm run build\n\nFROM node:22-alpine\nWORKDIR /app\nCOPY --from=build /app/dist ./dist\nCOPY --from=build /app/node_modules ./node_modules\nUSER node\nCMD ["node", "dist/server.js"]\n',done:'Пересоберём и проверим.'},
+  {t:'task',h:'Пересобери и перепроверь',p:'Собери shop:1.3 и просканируй его.',hints:['Сборка, затем тот же trivy.','docker build -t <тег> . && trivy image <тег>','docker build -t shop:1.3 . && trivy image shop:1.3'],sol:['docker build -t shop:1.3 . && trivy image shop:1.3'],
+   done:'Ни одной CRITICAL и HIGH. Осталась одна LOW — такие принимают как риск или ждут патча.',check:W=>W.f.trivy&&W.f.trivy['shop:1.3']&&W.f.trivy['shop:1.3'].crit===0&&W.f.trivy['shop:1.3'].high===0},
+  {t:'edit',h:'Поставь шлагбаум в CI',p:'Добавь в ci.yml шаг, который сканирует собранный образ и роняет сборку при находках CRITICAL и HIGH.',file:'.github/workflows/ci.yml',path:'/home/dev/shop/.github/workflows/ci.yml',hint:'Вместо строки TODO: `      - run: trivy image --exit-code 1 --severity CRITICAL,HIGH shop:${{ github.sha }}`',
+   checks:[{name:'Есть шаг с trivy',test:t=>/trivy\s+image/.test(t)||/aquasecurity\/trivy-action/.test(t)},{name:'Сборка падает на находках (exit-code 1)',test:t=>/--exit-code\s+1|exit-code:\s*["']?1/.test(t)},{name:'Фильтр по CRITICAL и HIGH',test:t=>/CRITICAL/.test(t)&&/HIGH/.test(t)},{name:'Сканирование до push',test:t=>t.indexOf('trivy')>-1&&t.indexOf('trivy')<t.indexOf('docker push')}],
+   sample:'name: ci\non: [push]\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: docker build -t shop:${{ github.sha }} .\n      - run: trivy image --exit-code 1 --severity CRITICAL,HIGH shop:${{ github.sha }}\n      - run: docker push registry.local/shop:${{ github.sha }}\n',done:'Образ с критичной уязвимостью больше не доедет до прода сам.'},
+  {t:'quiz',h:'Нашлась CRITICAL-уязвимость, но исправленной версии пакета пока нет. Что разумно?',o:['Оценить риск, задокументировать исключение и следить за патчем','Отключить сканер','Выкатить и забыть','Вырезать пакет руками из образа'],a:0,ex:'Для этого у trivy есть .trivyignore и флаг --ignore-unfixed. Главное — исключение осознанное и с датой пересмотра.'},
+ ]},
+ l33:{title:'Утёкшие секреты',xp:25,setup:leakWorld,steps:[
+  {t:'lecture',pages:[
+   {h:'Секрет в git — это навсегда',p:'Удалить файл новым коммитом мало: секрет остаётся в истории, в форках и у всех, кто склонировал репозиторий. Боты сканируют GitHub и находят ключи облаков за минуты после push.',code:'git log -p | grep AKIA     # история помнит всё\n\nПравильный порядок:\n1. Отозвать (ротировать) ключ — сразу\n2. Убрать секрет из кода, читать из окружения\n3. Не дать повториться: сканер в pre-commit и CI'},
+   {h:'Где хранить секреты',p:'Локально — в .env, который добавлен в .gitignore. В CI — в секретах пайплайна. В Kubernetes — в Secret, а лучше во внешнем хранилище: Vault, Yandex Lockbox, AWS Secrets Manager. В коде — только чтение из переменных окружения.',terms:[['ротация','выпустить новый ключ и отозвать старый'],['gitleaks','сканер секретов в файлах и истории git'],['pre-commit hook','проверка перед каждым коммитом на машине разработчика'],['push protection','GitHub блокирует push с известными форматами ключей']]}]},
+  {t:'task',h:'Просканируй репозиторий',p:'Аудитор попросил проверить репозиторий shop на утёкшие секреты, включая всю историю коммитов.',hints:['gitleaks в режиме проверки git-истории.','gitleaks detect (или gitleaks git)','gitleaks detect'],sol:['gitleaks detect'],
+   done:'Ключ AWS в config/aws.js, коммит недельной давности. Его уже могли найти.',check:W=>W.f.leakScan},
+  {t:'quiz',h:'Первое действие после такой находки?',o:['Отозвать ключ в AWS и выпустить новый','Удалить файл и закоммитить','Сделать репозиторий приватным','Переписать историю git'],a:0,ex:'Пока ключ действует, всё остальное вторично. Ротация закрывает доступ, даже если ключ уже скопировали.'},
+  {t:'edit',h:'Убери ключ из кода',p:'Пусть config/aws.js берёт ключи из переменных окружения AWS_ACCESS_KEY_ID и AWS_SECRET_ACCESS_KEY.',file:'config/aws.js',path:'/home/dev/shop/config/aws.js',hint:'`const AWS_KEY = process.env.AWS_ACCESS_KEY_ID;` и `const AWS_SECRET = process.env.AWS_SECRET_ACCESS_KEY;`',
+   checks:[{name:'В коде нет ключей',test:t=>!/AKIA[0-9A-Z]{16}/.test(t)&&!/wJalrXUtnFEMI/.test(t)},{name:'Ключи из process.env',test:t=>/process\.env\.AWS_ACCESS_KEY_ID/.test(t)&&/process\.env\.AWS_SECRET_ACCESS_KEY/.test(t)}],
+   sample:'// Доступ к S3 для загрузки картинок\nconst AWS_REGION = "eu-central-1";\nconst AWS_KEY = process.env.AWS_ACCESS_KEY_ID;\nconst AWS_SECRET = process.env.AWS_SECRET_ACCESS_KEY;\n\nmodule.exports = { AWS_REGION, AWS_KEY, AWS_SECRET };\n',done:'Код чистый.'},
+  {t:'edit',h:'Закрой .env от git',p:'Разработчики хранят ключи локально в файле .env. Сделай так, чтобы он никогда не попал в репозиторий.',file:'.gitignore',path:'/home/dev/shop/.gitignore',hint:'Добавь строку `.env`',
+   checks:[{name:'.env в .gitignore',test:t=>/^\s*\.env\*?\s*$/m.test(t)},{name:'Старые правила на месте',test:t=>/node_modules/.test(t)}],sample:'node_modules/\ndist/\n.env\n',done:'Теперь `git add .` не захватит .env.'},
+  {t:'task',h:'Проверь текущие файлы',p:'Убедись, что в текущих файлах проекта секретов не осталось.',hints:['У gitleaks есть режим сканирования папки без истории.','gitleaks dir <путь>','gitleaks dir .'],sol:['gitleaks dir .'],
+   done:'Файлы чистые. Но `gitleaks detect` по-прежнему найдёт ключ в старом коммите — поэтому ротация была обязательной.',check:W=>W.f.leakDir},
+  {t:'quiz',h:'Как не допустить повторения?',o:['gitleaks в pre-commit и в CI, секреты — в хранилище','Ревью раз в квартал','Запретить разработчикам облако','Шифровать весь репозиторий'],a:0,ex:'pre-commit ловит ошибку до коммита, CI — если хук обошли. А GitHub Push Protection блокирует известные форматы ключей прямо при push.'},
+ ]},
+ l34:{title:'Постмортем',xp:30,steps:[
+  {t:'lecture',pages:[
+   {h:'Разбор без поиска виноватых',p:'После инцидента пишут разбор: что случилось, почему и что изменим. Главный принцип — blameless: ищем слабые места в системе и процессах, а не виноватого. Если человек ошибся, значит, система позволила ошибиться.',code:'## Что произошло\n## Влияние          кто пострадал, сколько, как долго\n## Хронология       время → событие\n## Корневая причина\n## Что сделаем      задачи с владельцем и сроком'},
+   {h:'5 почему',p:'Спрашивай «почему», пока не дойдёшь до системной причины.\nСайт лёг → nginx упал → диск заполнен → 38 ГБ старых логов → ротацию не настроили при запуске сервера → в чек-листе запуска нет пункта про logrotate.\nПоследний ответ и есть то, что надо чинить.',terms:[['blameless','разбор без обвинений'],['MTTR','среднее время восстановления'],['action item','конкретная задача с владельцем и сроком']]}]},
+  {t:'quiz',h:'Инцидент случился после команды инженера Пети. Что пишем в постмортеме?',o:['Какая защита позволила команде пройти без проверки и как её добавить','Что Петя ошибся и его надо наказать','Ничего, раз виноватый найден','Что инцидент — случайность'],a:0,ex:'Обвинения учат людей скрывать ошибки. Разбор системы учит её становиться надёжнее.'},
+  {t:'edit',h:'Напиши постмортем',p:'Опиши инцидент из урока «nginx лёг в 3 ночи»: в 03:12 сработал алерт, в 03:20 нашли заполненный диск, в 03:24 удалили старый лог на 38 ГБ, в 03:25 nginx поднят. Сайт не работал 13 минут. Заполни все разделы, а вместо «…» напиши свой текст.',file:'postmortem.md',
+   starter:'# Постмортем: недоступность сайта 21.10\n\n## Что произошло\n…\n\n## Влияние\n…\n\n## Хронология\n- 03:12 …\n\n## Корневая причина\n…\n\n## Что сделаем\n- [ ] …\n',
+   hint:'Влияние: «сайт недоступен 13 минут ночью». Хронология — четыре события из условия. Корневая причина: не настроена ротация логов и нет алерта на заполнение диска. Задачи: настроить logrotate, добавить алерт на диск > 85%, с владельцем и сроком.',
+   checks:[{name:'Все разделы на месте',test:t=>['Что произошло','Влияние','Хронология','Корневая причина','Что сделаем'].every(h=>new RegExp('^##\\s*'+h,'mi').test(t))},
+    {name:'Влияние в цифрах (минуты)',test:t=>/\d+\s*мин/i.test(mdSec(t,'Влияние'))},
+    {name:'Хронология: минимум 3 события со временем',test:t=>(mdSec(t,'Хронология').match(/\b\d{1,2}:\d{2}\b/g)||[]).length>=3},
+    {name:'Корневая причина системная (ротация логов, мониторинг диска)',test:t=>/ротац|logrotate|алерт|мониторинг/i.test(mdSec(t,'Корневая причина'))},
+    {name:'Минимум две задачи «- [ ]»',test:t=>(mdSec(t,'Что сделаем').match(/^\s*-\s*\[\s?\]\s*\S/gm)||[]).length>=2},
+    {name:'Заглушек «…» не осталось',test:t=>!/…|\.\.\./.test(t)}],
+   sample:'# Постмортем: недоступность сайта 21.10\n\n## Что произошло\nnginx на prod-web-01 упал из-за заполненного диска.\n\n## Влияние\nСайт был недоступен 13 минут ночью, все пользователи видели ошибку.\n\n## Хронология\n- 03:12 сработал алерт: сайт недоступен\n- 03:20 нашли заполненный на 100% диск\n- 03:24 удалили старый лог на 38 ГБ\n- 03:25 nginx поднят, сайт работает\n\n## Корневая причина\nНе настроена ротация логов, и нет алерта на заполнение диска.\n\n## Что сделаем\n- [ ] Настроить logrotate на всех веб-серверах — Алексей, до 30.10\n- [ ] Алерт на диск > 85% — Олег, до 28.10\n',
+   done:'Такой документ читают всей командой, а задачи из него попадают в бэклог с владельцами.'},
+  {t:'quiz',h:'Какая задача из постмортема хорошая?',o:['Настроить logrotate на всех веб-серверах — Алексей, до 30.10','Быть внимательнее с дисками','Чаще проверять серверы','Не допускать таких инцидентов'],a:0,ex:'Хорошая задача конкретна, проверяема и имеет владельца со сроком. «Быть внимательнее» нельзя ни сделать, ни проверить.'},
+  {t:'quiz',h:'Что такое MTTR?',o:['Среднее время восстановления после сбоя','Время между релизами','Максимальный трафик','Время ответа сервера'],a:0,ex:'MTTR входит в DORA-метрики вместе с частотой деплоев, временем доставки изменений и долей неудачных изменений.'},
+ ]},
  l13:{title:'Ночная смена',xp:60,boss:true},
 };
+/* лекции к первым урокам: заменяют короткие вводные карточки */
+const LECTURES={
+ l1:[{h:'Терминал — главный инструмент девопса',p:'Серверы в облаке почти никогда не имеют графического интерфейса. Ты подключаешься по SSH и управляешь ими командами: вводишь текст — получаешь текст.',code:'dev@prod-web-01:~$ pwd\n/home/dev\n│   │           │\n│   │           └ текущая папка (~ — домашняя)\n│   └ имя сервера\n└ пользователь'},
+     {h:'Файловая система',p:'Всё в Linux — файлы в одном дереве от корня /. Пути, которые начинаются с /, абсолютные. Остальные считаются от текущей папки.',code:'/            корень\n├── etc/     конфиги: nginx, systemd, hosts\n├── home/    домашние папки пользователей\n├── var/log/ логи\n└── tmp/     временные файлы',terms:[['pwd','где я'],['ls','что здесь (ls -la — подробно и со скрытыми)'],['cd','перейти (cd .. — на уровень выше, cd ~ — домой)'],['cat','показать файл']]}],
+ l2:[{h:'Логи — первое место при инциденте',p:'Приложения пишут в лог всё важное: запросы, предупреждения, ошибки. Логи большие, поэтому их не читают целиком, а фильтруют.',code:'tail -n 50 app.log     # последние 50 строк\ntail -f app.log        # следить в реальном времени\ngrep ERROR app.log     # только строки с ERROR\ngrep -c ERROR app.log  # сколько их\ngrep -i error app.log  # без учёта регистра'},
+     {h:'Трубы: соединяем команды',p:'Вертикальная черта | передаёт вывод одной команды на вход другой. Так из простых утилит собирают анализ на лету.',code:'cat app.log | grep ERROR | wc -l\n# прочитать → оставить ошибки → посчитать строки',terms:[['|','труба: вывод слева → вход справа'],['wc -l','посчитать строки'],['уровни логов','DEBUG < INFO < WARN < ERROR < FATAL']]}],
+ l3:[{h:'Процессы',p:'Каждая запущенная программа — процесс с уникальным номером PID. ps показывает список процессов, top и htop — нагрузку в реальном времени.',code:'ps aux\nUSER   PID  %CPU %MEM COMMAND\nroot     1   0.0  0.4 /sbin/init\nwww    902   1.2  0.9 nginx: worker process'},
+     {h:'Сигналы',p:'Процессу можно послать сигнал. SIGTERM (`kill PID`) — вежливая просьба завершиться: процесс успевает сохранить данные. SIGKILL (`kill -9 PID`) — ядро убивает процесс сразу, без шанса прибраться.',terms:[['SIGTERM (15)','попросить завершиться, сигнал по умолчанию'],['SIGKILL (9)','убить немедленно, перехватить нельзя'],['SIGHUP (1)','многие демоны по нему перечитывают конфиг']]}],
+ l4:[{h:'Как дежурный разбирает инцидент',p:'Не чинить наугад. Порядок всегда один: подтвердить симптом → найти причину по логам и метрикам → исправить → проверить → записать.',code:'симптом      curl localhost\nсостояние    systemctl status nginx\nпричина      journalctl -u nginx, /var/log/nginx/error.log\nресурсы      df -h, du -sh /var/log/*\nисправление  systemctl restart nginx\nпроверка     curl localhost'},
+     {h:'Диск',p:'Заполненный диск — одна из самых частых причин ночных падений: сервисы не могут писать логи, PID-файлы и временные данные.',terms:[['df -h','занятость разделов'],['du -sh папка/*','что именно занимает место'],['logrotate','ротация и сжатие старых логов по расписанию']]}],
+ l5:[{h:'HTTP за одну карточку',p:'Клиент отправляет запрос (метод, путь, заголовки), сервер отвечает кодом статуса и телом. По первой цифре кода видно, чья проблема.',code:'2xx  успех             200 OK, 201 Created\n3xx  перенаправление   301, 302, 304\n4xx  ошибка клиента    400, 401, 403, 404, 429\n5xx  ошибка сервера    500, 502, 503, 504'},
+     {h:'Порты',p:'IP-адрес — это дом, порт — квартира. Один сервер слушает много портов, у каждого сервиса свой.',code:'22    SSH\n80    HTTP\n443   HTTPS\n5432  PostgreSQL\n6379  Redis\n9090  Prometheus',terms:[['502','прокси не получил нормального ответа от бэкенда'],['503','сервис недоступен (часто — нет живых подов)'],['504','бэкенд не успел ответить']]}],
+ l6:[{h:'Зачем контейнеры',p:'«У меня работает» — классическая проблема: на сервере другая версия языка, библиотек или ОС. Контейнер упаковывает приложение вместе со всем окружением, и оно запускается одинаково везде.',code:'образ (image)  ──docker run──►  контейнер\nшаблон, только чтение          запущенный процесс\nnginx:1.27                     web (порт 8080 → 80)'},
+     {h:'Основные команды',code:'docker run -d --name web -p 8080:80 nginx:1.27\n           │  │          │          └ образ:тег\n           │  │          └ порт сервера:порт контейнера\n           │  └ имя\n           └ в фоне\ndocker ps          # запущенные\ndocker logs web    # логи\ndocker stop web    # остановить',terms:[['image','шаблон: приложение и зависимости'],['container','запущенный экземпляр образа'],['registry','хранилище образов: Docker Hub, GitHub, Yandex Container Registry']]}],
+ l7:[{h:'Почему контейнеры падают',p:'Контейнер живёт, пока жив его главный процесс. Процесс упал — контейнер остановился с кодом выхода. Причина почти всегда видна в docker logs.',code:'docker ps -a\nSTATUS\nUp 3 minutes    работает\nExited (0)      завершился штатно\nExited (1)      ошибка в приложении\nExited (137)    убит (часто — нехватка памяти)'},
+     {h:'Конфигурация через окружение',p:'Один и тот же образ работает в dev и prod — отличаются только переменные окружения: адрес базы, уровень логов, ключи. Их передают при запуске, а не зашивают в образ.',code:'docker run -d --name api \\\n  -e DATABASE_URL=postgres://db:5432/app \\\n  -e LOG_LEVEL=info \\\n  api:1.0',terms:[['-e КЛЮЧ=ЗНАЧЕНИЕ','переменная окружения'],['--env-file .env','все переменные из файла'],['docker rm','удалить остановленный контейнер']]}],
+ l8:[{h:'Зачем Kubernetes',p:'Когда контейнеров десятки, а серверов несколько, кто-то должен решать, где их запускать, перезапускать упавшие и обновлять без простоя. Это делает Kubernetes.',code:'Ты описываешь ЖЕЛАЕМОЕ:          Kubernetes доводит РЕАЛЬНОЕ:\n  deployment web: 3 реплики   →    под упал → создать новый\n  образ web:1.4                    нода умерла → переселить поды'},
+     {h:'Основные объекты',code:'Deployment ──управляет──► ReplicaSet ──► Pod  Pod  Pod\n(желаемое состояние,        (нужное        (контейнеры)\n обновления, откаты)         число копий)',terms:[['Pod','один или несколько контейнеров с общим IP'],['Deployment','держит нужное число подов и обновляет их'],['kubectl','CLI для Kubernetes: get, describe, logs, delete, apply'],['namespace','папка для ресурсов: prod, stage, monitoring']]}],
+ l9:[{h:'Статусы подов',p:'Статус пода — первая подсказка, где искать причину.',code:'Pending                      ждёт ноду с ресурсами\nContainerCreating            качает образ, запускается\nRunning                      работает\nCrashLoopBackOff             падает при старте, перезапуск с паузой\nImagePullBackOff             не может скачать образ\nCreateContainerConfigError   нет нужного ConfigMap или Secret\nOOMKilled                    превысил лимит памяти'},
+     {h:'Откат — первым делом',p:'Если релиз сломал прод, сначала верни рабочую версию, потом разбирайся. Kubernetes хранит историю ревизий деплоймента.',code:'kubectl rollout history deployment/api\nkubectl rollout undo deployment/api\nkubectl rollout status deployment/api',terms:[['logs --previous','логи прошлого, упавшего запуска контейнера'],['get events','события кластера: перезапуски, ошибки планировщика'],['rollout undo','откат на предыдущую ревизию']]}],
+ l10:[{h:'Горизонтальное масштабирование',p:'Нагрузка выросла — добавь копий. Kubernetes распределит трафик между подами через Service. Это проще и надёжнее, чем раздувать один сервер.',code:'kubectl top pods                           # кто сколько ест\nkubectl scale deployment/web --replicas=5  # руками\n\nHPA: держать CPU около 70%, от 2 до 10 подов  # автоматически'},
+     {h:'Сколько реплик нужно',p:'Минимум две — чтобы падение одного пода не роняло сервис. Максимум ограничен деньгами и ресурсами кластера. Автомасштабированию нужно время: новый под стартует не мгновенно.',terms:[['HPA','Horizontal Pod Autoscaler'],['scale out','больше копий'],['scale up','больше ресурсов одной копии']]}],
+ l11:[{h:'Хватит скейлить руками',p:'Скрипт запускается каждую игровую минуту. Он получает `cluster`: в `cluster.services` лежат сервисы с полями `name`, `replicas`, `util` (нагрузка от 0 до 1+). Чтобы поменять число реплик, вызывай `cluster.scale(имя, n)`.'},
+      {h:'Цикл управления',p:'Так устроен весь Kubernetes: контроллер в цикле смотрит на текущее состояние, сравнивает с желаемым и делает шаг навстречу. Твой скрипт — такой же контроллер.',code:'каждую минуту:\n  для каждого сервиса:\n    нагрузка > 80%   → +1 реплика\n    нагрузка < 30%   → −1 реплика (но не меньше одной)'}],
+ l12:[{h:'Поды тоже болеют',p:'У каждого сервиса есть `pods`: массив объектов с полями `name`, `status`, `mem` (память в % от лимита). Удалить под можно через `cluster.restart(имя)`, Deployment создаст новый.'},
+      {h:'Автохил в настоящем кластере',p:'В реальном Kubernetes это делают пробы и лимиты, а не самописные скрипты. Но логика та же: заметить больной под и заменить его.',terms:[['liveness probe','перезапуск зависшего контейнера'],['OOMKilled','убийство за превышение памяти'],['PodDisruptionBudget','сколько подов можно потерять одновременно']]}],
+ l14:[{h:'CI проверяет каждый коммит',p:'Continuous Integration: каждая правка автоматически собирается и прогоняется тестами. Красный пайплайн значит, что в main что-то сломано и деплоить нельзя.',code:'push в ветку\n   │\n   ▼\n[checkout] → [install] → [lint] → [test] → [build] → [push image]\nлюбой шаг красный → пайплайн красный → в main не вливаем'},
+      {h:'GitHub Actions за минуту',code:'name: ci\non: { push: { branches: [main] } }\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with: { node-version: 22 }\n      - run: npm ci\n      - run: npm test',terms:[['workflow','файл в .github/workflows/'],['job','набор шагов на одном раннере'],['runner','машина, где выполняется job'],['gh run list','запуски CI из терминала']]}],
+ l15:[{h:'CD: код сам едет в прод',p:'Continuous Delivery: после зелёных тестов пайплайн деплоит сам. Две классические дыры: деплой, который не ждёт тестов, и токены, вписанные прямо в репозиторий.'},
+      {h:'Безопасный конвейер',code:'test ──needs──► build ──needs──► deploy (только из main)\n                                    │\n                       токены из ${{ secrets.X }}, не из git',terms:[['needs','job ждёт успешного завершения другой'],['environment','окружение с правилами: ревьюеры, свои секреты'],['canary','новая версия сначала на малую долю трафика'],['OIDC','вход CI в облако без долгоживущих ключей']]}],
+ l16:[{h:'Prometheus видит всё',p:'Prometheus каждые 15 секунд опрашивает сервисы и хранит метрики. Спрашивают его на языке PromQL. В этом терминале запрос пишется так: `query <выражение>`.'},
+      {h:'PromQL в трёх приёмах',code:'up                                   # жива ли цель\nrate(http_requests_total[5m])        # запросы в секунду\nsum by (instance) (rate(...[5m]))    # сложить по инстансам\nhistogram_quantile(0.95, ...)        # p95 задержки',terms:[['counter','только растёт: запросы, ошибки — смотрят через rate'],['gauge','растёт и падает: память, длина очереди'],['label','измерение метрики: instance, status, job']]}],
+ l17:[{h:'Хороший алерт будит только по делу',p:'Если алерт срабатывает от каждой единичной ошибки, через неделю его перестанут читать. Это alert fatigue, и однажды из-за неё пропустят настоящий инцидент.'},
+      {h:'Анатомия правила',code:'- alert: HighErrorRate\n  expr: доля 5xx > 0.05       # условие\n  for: 5m                     # держится 5 минут\n  labels:\n    severity: critical        # куда слать: пейджер или чат\n  annotations:\n    summary: "5xx выше 5%"    # что увидит дежурный\n    runbook_url: https://...  # что делать',terms:[['symptom-based','алерт на то, что видит пользователь, а не на CPU'],['runbook','инструкция для дежурного к каждому алерту']]}],
+};
+for(const [id,pages] of Object.entries(LECTURES)){const L=LESSONS[id];if(!L||!L.steps)continue;if(L.steps[0].t==='learn')L.steps[0]={t:'lecture',pages};else L.steps.unshift({t:'lecture',pages})}
 const ORDER=UNITS.flatMap(u=>u.lessons);
 const unitOf=id=>UNITS.find(u=>u.lessons.includes(id));
-const unlocked=id=>{if(HOOKS.unlockAll)return true;const i=ORDER.indexOf(id);return i===0||S.done[ORDER[i-1]]};
+const unlocked=id=>{if(HOOKS.unlockAll||S.done[id])return true;const i=ORDER.indexOf(id);return i===0||S.done[ORDER[i-1]]};
 const nextLesson=()=>ORDER.find(id=>!S.done[id]);
 
 /* =================== fake shell =================== */
@@ -670,16 +1059,17 @@ function splitTop(line,sep){const out=[];let cur='',q=null;for(let i=0;i<line.le
   out.push(cur);return out.map(s=>s.trim())}
 function sh(W,line){
   W.f.grep=null;W.f.lastFile=null;
-  const parts=splitTop(line,'&&').filter(Boolean);if(!parts.length)return{out:'',cls:''};
   const outs=[];let cls='',clear=false;
-  for(const part of parts){
+  for(const seg of splitTop(line,';').filter(Boolean)){
+  for(const part of splitTop(seg,'&&').filter(Boolean)){
     const stages=splitTop(part,'|').filter(Boolean);let res=sh1(W,stages[0]);
     if(res.clear){clear=true;outs.length=0;continue}
     for(const st of stages.slice(1)){if(res.cls==='e')break;const f=pipeFilter(W,res.out||'',st);res=f.err?{out:f.err,cls:'e'}:{out:f.out,cls:res.cls==='e'?'e':''}}
     if(/(kubectl|k)\s+get\s+po/.test(part)&&W.f.kdelAt!=null)W.f.kdelGetSameLine=true;
+    if(!/^\s*echo\s.*\$\?/.test(part))W.lastExit=res.exit!=null?res.exit:(res.cls==='e'?1:0);
     if(res.out)outs.push(res.out);if(res.cls)cls=res.cls;
-    if(res.cls==='e')break;
-  }
+    if(res.cls==='e'||res.exit)break;
+  }}
   return{out:outs.join('\n'),cls,clear:clear&&!outs.length}}
 function pipeFilter(W,text,cmdline){
   const a=cmdline.trim().split(/\s+/).map(x=>x.replace(/^["']|["']$/g,''));const c=a[0];let L=text===''?[]:text.split('\n');
@@ -701,8 +1091,9 @@ function sh1(W,line){
   const r={out:'',cls:''};const a=line.trim().split(/\s+/).map(x=>x.replace(/^["']|["']$/g,''));let cmd=a[0];
   const err=m=>{r.out=m;r.cls='e';return r};
   if(cmd==='k')cmd='kubectl';
+  {const x=shExt(W,line,a,cmd,err,r);if(x)return x}
   switch(cmd){
-  case 'help':r.out='Доступно: pwd ls cd cat tail head grep ps kill df rm systemctl curl whoami hostname echo clear\n          docker ps|run|logs|stop|rm|images\n          kubectl get|describe|logs|delete|scale|top|rollout\n          git status|add|commit|push|log|diff   gh run list|view   query <promql>\nМожно: трубы | (grep, wc -l, head, tail, sort, uniq), цепочки &&, sudo.\nTab дополняет, ↑ повторяет команду.';r.cls='d';return r;
+  case 'help':r.out='Доступно: pwd ls cd cat tail head grep ps kill df rm systemctl curl whoami hostname echo clear\n          docker ps|run|logs|stop|rm|images\n          kubectl get|describe|logs|delete|scale|top|rollout\n          git status|add|commit|push|log|diff   gh run list|view   query <promql>\nМожно: трубы | (grep, wc -l, head, tail, sort, uniq), цепочки && и ;, sudo.\nВ уроках есть ещё: chmod chown dig git-ветки docker build/compose terraform ansible helm trivy gitleaks.\nTab дополняет, ↑ повторяет команду.';r.cls='d';return r;
   case 'pwd':r.out=W.cwd;return r;
   case 'whoami':r.out='dev';return r;
   case 'hostname':r.out='prod-web-01';return r;
@@ -746,7 +1137,7 @@ function sh1(W,line){
   case 'clear':r.clear=true;return r;
   case 'docker':return docker(W,a.slice(1),err,r);
   case 'kubectl':return kubectl(W,a.slice(1),err,r,line);
-  case 'sudo':return a[1]?sh1(W,line.trim().replace(/^sudo\s+/,'')):err('usage: sudo <команда>');
+  case 'sudo':{if(!a[1])return err('usage: sudo <команда>');W.sudo=true;try{return sh1(W,line.trim().replace(/^sudo\s+/,''))}finally{W.sudo=false}}
   default:return err(REAL_CMDS.includes(cmd)?`${cmd}: в тренажёре этой команды нет. В настоящем Linux она есть, но в уроках не понадобится.`:`${cmd}: command not found. Введи help`);
   }
 }
@@ -875,9 +1266,261 @@ function kubectl(W,a,err,r,line){
   return err(`error: неизвестная команда kubectl ${v||''}. Есть: get, describe, logs, delete, scale, rollout, top`);
 }
 
-function complete(W,val){const parts=val.split(' '),last=parts.pop();const words=['kubectl','get','pods','deploy','top','logs','describe','delete','pod','scale','rollout','undo','status','--replicas=','docker','ps','run','images','stop','rm','systemctl','restart','nginx','grep','tail','cat','curl','localhost','git','add','commit','push','diff','gh','list','view','--log-failed','query','events','nodes','svc','history','--previous','-l','app=','journalctl','du','wc'];
+/* ---- расширения симулятора: права, systemd, DNS, git-ветки, docker build/compose, terraform, ansible, k8s, helm, trivy, gitleaks ---- */
+const MODE_STR=m=>[...String(m).padStart(3,'0')].map(c=>{const n=+c;return(n&4?'r':'-')+(n&2?'w':'-')+(n&1?'x':'-')}).join('');
+function permOf(W,p){return W.modes&&W.modes[p]!=null?String(W.modes[p]):(W.dirs.has(p)?'755':'644')}
+function ownerOf(W,p){return (W.owners&&W.owners[p])||'dev:dev'}
+function can(W,p,bit){if(W.sudo)return true;const m=permOf(W,p).padStart(3,'0');const[u,g]=ownerOf(W,p).split(':');const d=u==='dev'?+m[0]:(g==='dev'?+m[1]:+m[2]);return (d&bit)!==0}
+function chmodApply(cur,spec){
+  if(/^[0-7]{3,4}$/.test(spec))return spec.slice(-3);
+  const m=spec.match(/^([ugoa]*)([+\-=])([rwx]+)$/);if(!m)return null;
+  const who=m[1]||'a',d=[...cur.padStart(3,'0')].map(Number),bits=[...m[3]].reduce((s,c)=>s|({r:4,w:2,x:1}[c]),0);
+  const idx=[];if(/[ua]/.test(who))idx.push(0);if(/[ga]/.test(who))idx.push(1);if(/[oa]/.test(who))idx.push(2);
+  for(const i of idx)d[i]=m[2]==='+'?d[i]|bits:m[2]==='-'?d[i]&~bits:bits;return d.join('')}
+function scriptOut(W,p){
+  if(/healthcheck/.test(p)){const ok=W.svc.nginx&&W.svc.nginx.active;W.lastExit=ok?0:1;if(!ok)W.f.healthDown=true;return ok?{out:'OK: http://localhost/healthz отвечает',exit:0}:{out:'ERROR: http://localhost/healthz не отвечает',cls:'e',exit:1}}
+  const L=[];for(const l of (W.files[p]||'').split('\n')){const m=l.match(/^\s*echo\s+["']?(.*?)["']?\s*$/);if(m)L.push(m[1])}return{out:L.join('\n'),exit:0}}
+function resolveHost(W,host){for(const l of (W.files['/etc/hosts']||'').split('\n')){const t=l.replace(/#.*/,'').trim().split(/\s+/);if(t.length>1&&t.slice(1).includes(host))return t[0]}return (W.dns&&W.dns[host])||null}
+const kIp=p=>'10.42.'+(p.name.charCodeAt(p.name.length-3)%9)+'.'+(p.name.charCodeAt(p.name.length-2)%240+10);
+
+function shExt(W,line,a,cmd,err,r){
+  if(W.tf&&W.tf.await){W.tf.await=false;if(cmd==='yes')return tfApply(W,r);return err('Error: Apply cancelled.\n(Terraform ждал ответа yes. Запусти terraform apply ещё раз.)')}
+  if(cmd==='echo'&&/\$\?/.test(line)){const code=W.lastExit==null?0:W.lastExit;if(code===1&&W.f.healthDown)W.f.sawExit1=true;r.out=line.replace(/^\s*echo\s+/,'').replace(/["']/g,'').replace(/\$\?/g,String(code));return r}
+  /* права и пользователи */
+  if(W.modes){
+    if(cmd==='id'){r.out='uid=1000(dev) gid=1000(dev) groups=1000(dev),27(sudo)';return r}
+    if(cmd==='ls'&&a.slice(1).some(x=>/^-\w*l/.test(x))){const{ar}=flagsArgs(a.slice(1));const t=rp(W,ar[0]);let list;
+      if(W.files[t]!=null)list=[{n:ar[0],p:t,dir:false}];else if(W.dirs.has(t))list=children(W,t);else return err(`ls: cannot access '${ar[0]}': No such file or directory`);
+      W.f.lsl=W.f.lsl||{};const rows=list.map(c=>{W.f.lsl[c.p]=true;const[u,g]=ownerOf(W,c.p).split(':');const sz=W.sizes[c.p]||(c.dir?'4096':String((W.files[c.p]||'').length));return `${c.dir?'d':'-'}${MODE_STR(permOf(W,c.p))} 1 ${pad(u,5)} ${pad(g,5)} ${String(sz).padStart(5)} Oct 21 03:00 ${c.n}`});
+      r.out=(W.files[t]!=null?'':'total '+list.length+'\n')+rows.join('\n');return r}
+    if(cmd==='chmod'){const{ar}=flagsArgs(a.slice(1));if(ar.length<2)return err('usage: chmod РЕЖИМ ФАЙЛ, например chmod +x deploy.sh или chmod 600 secret.env');
+      const p=rp(W,ar[1]);if(W.files[p]==null&&!W.dirs.has(p))return err(`chmod: cannot access '${ar[1]}': No such file or directory`);
+      if(!W.sudo&&ownerOf(W,p).split(':')[0]!=='dev')return err(`chmod: changing permissions of '${ar[1]}': Operation not permitted`);
+      const nm=chmodApply(permOf(W,p),ar[0]);if(!nm)return err(`chmod: invalid mode: '${ar[0]}'`);W.modes[p]=nm;return r}
+    if(cmd==='chown'){const{ar}=flagsArgs(a.slice(1));if(ar.length<2)return err('usage: chown ВЛАДЕЛЕЦ[:ГРУППА] ФАЙЛ');const p=rp(W,ar[1]);
+      if(W.files[p]==null&&!W.dirs.has(p))return err(`chown: cannot access '${ar[1]}': No such file or directory`);
+      if(!W.sudo)return err(`chown: changing ownership of '${ar[1]}': Operation not permitted`);
+      const[u,g]=ar[0].split(':');if(!['root','dev','shop','www-data','nginx'].includes(u))return err(`chown: invalid user: '${ar[0]}'`);W.owners[p]=u+':'+(g||ownerOf(W,p).split(':')[1]);return r}
+    if(['cat','less','tail','head','grep'].includes(cmd)){for(const f of a.slice(1).filter(x=>!x.startsWith('-'))){const p=rp(W,f);if(W.files[p]!=null&&!can(W,p,4))return err(`${cmd}: ${f}: Permission denied`)}}
+  }
+  /* запуск скриптов */
+  if(/^\.{0,2}\//.test(cmd)||((cmd==='bash'||cmd==='sh')&&a[1])){
+    const viaBash=cmd==='bash'||cmd==='sh',f=viaBash?a[1]:cmd,p=rp(W,f);
+    if(W.files[p]==null)return err(`-bash: ${f}: No such file or directory`);
+    if(viaBash?!can(W,p,4):!can(W,p,1)){W.f.execTried=p;return err(`-bash: ${f}: Permission denied`)}
+    W.f.execOk=p;const o=scriptOut(W,p);r.out=o.out;r.cls=o.cls||'';r.exit=o.exit;return r}
+  /* systemd: любые сервисы, кроме nginx (им занимается базовый терминал) */
+  if(cmd==='systemctl'&&a[2]&&!/^nginx/.test(a[a.length-1])){
+    const act=a[1],name=a[a.length-1].replace(/\.service$/,''),s=W.svc[name];if(!s)return err(`Unit ${name}.service could not be found.`);
+    const now=a.includes('--now'),started=()=>{if(!s.active){s.active=true;s.journal=(s.journal?s.journal+'\n':'')+`Oct 21 09:31:07 prod-web-01 systemd[1]: Started ${name}.service - ${s.desc||name}.`}};
+    if(act==='status'){W.f.svcStatus=name;r.out=`● ${name}.service - ${s.desc||name}\n     Loaded: loaded (/etc/systemd/system/${name}.service; ${s.enabled?'enabled':'disabled'}; preset: enabled)\n     Active: ${s.active?'active (running) since Wed 2026-10-21 09:31:07':'inactive (dead)'}`;if(!s.active)r.exit=3;return r}
+    if(act==='is-enabled'){W.f.isEnabled=name;r.out=s.enabled?'enabled':'disabled';if(!s.enabled)r.exit=1;return r}
+    if(act==='is-active'){r.out=s.active?'active':'inactive';if(!s.active)r.exit=3;return r}
+    if(act==='enable'){s.enabled=true;if(now)started();r.out=`Created symlink /etc/systemd/system/multi-user.target.wants/${name}.service → /etc/systemd/system/${name}.service.`;return r}
+    if(act==='disable'){s.enabled=false;if(now)s.active=false;r.out=`Removed "/etc/systemd/system/multi-user.target.wants/${name}.service".`;return r}
+    if(act==='start'||act==='restart'){started();return r}
+    if(act==='stop'){s.active=false;return r}
+    return err('systemctl: в тренажёре есть status, start, stop, restart, enable, disable, is-enabled, is-active')}
+  if(cmd==='journalctl'){const u=line.match(/-u\s+(\S+)/),name=u&&u[1].replace('.service','');if(name&&name!=='nginx'&&W.svc[name]){W.f.journal=name;r.out=W.svc[name].journal||'-- No entries --';return r}}
+  if(cmd==='crontab'){if(a[1]==='-l'){r.out=(W.files['/var/spool/cron/dev']||'').trim()||'no crontab for dev';return r}
+    if(a[1]==='-e')return err('crontab -e открывает редактор. В тренажёре расписание правится во вкладке редактора урока.');return err('usage: crontab -l')}
+  /* DNS и сеть */
+  if(W.dns){
+    if(cmd==='dig'||cmd==='nslookup'||cmd==='host'){const host=a.slice(1).filter(x=>!/^[+-]/.test(x))[0];if(!host)return err(`usage: ${cmd} <имя>`);W.f.dig=host;const ip=W.dns[host];
+      if(cmd==='dig'){if(a.includes('+short')){r.out=ip||'';return r}r.out=`; <<>> DiG 9.18.28 <<>> ${host}\n;; ->>HEADER<<- opcode: QUERY, status: ${ip?'NOERROR':'NXDOMAIN'}\n`+(ip?`\n;; ANSWER SECTION:\n${host}.\t\t300\tIN\tA\t${ip}\n`:'')+`\n;; Query time: 4 msec\n;; SERVER: 10.0.0.2#53(10.0.0.2) (UDP)`;return r}
+      if(cmd==='nslookup'){r.out=ip?`Server:\t\t10.0.0.2\nAddress:\t10.0.0.2#53\n\nName:\t${host}\nAddress: ${ip}`:`** server can't find ${host}: NXDOMAIN`;if(!ip)r.cls='e';return r}
+      r.out=ip?`${host} has address ${ip}`:`Host ${host} not found: 3(NXDOMAIN)`;return r}
+    if(cmd==='getent'&&a[1]==='hosts'){const ip=resolveHost(W,a[2]);W.f.getent=true;r.out=ip?`${ip}       ${a[2]}`:'';if(!ip)r.exit=2;return r}
+    if(cmd==='curl'){const v=a.some(x=>/^-\w*v/.test(x)||x==='--verbose'),u=a.slice(1).find(x=>!x.startsWith('-'))||'',m=u.replace(/^https?:\/\//,'').match(/^([\w.-]+)(?::(\d+))?/);if(!m)return err('curl: укажи адрес');
+      const host=m[1],port=+(m[2]||(u.startsWith('https')?443:80));if(host==='localhost'||host==='127.0.0.1')return null;
+      const ip=resolveHost(W,host);W.f.curlHost=host;if(v)W.f.curlV=true;
+      if(!ip)return err(`curl: (6) Could not resolve host: ${host}`);
+      const head=v?`* Host ${host}:${port} was resolved.\n* IPv4: ${ip}\n*   Trying ${ip}:${port}...\n`:'';
+      if(!(W.alive||[]).includes(ip)){r.out=head+`curl: (28) Failed to connect to ${host} port ${port} after 5002 ms: Timeout was reached`;r.cls='e';return r}
+      W.f.curlOk=host;r.out=head+(v?`* Connected to ${host} (${ip}) port ${port}\n> GET / HTTP/1.1\n> Host: ${host}\n>\n< HTTP/1.1 200 OK\n< Server: nginx/1.27.2\n<\n`:'')+'<!DOCTYPE html><html><head><title>Uptime Shop</title></head>…</html>';r.cls='g';return r}
+  }
+  if(cmd==='git'&&W.g)return git2(W,a.slice(1),err,r,line);
+  if(cmd==='docker'&&a[1]==='build'){W.imgInfo=W.imgInfo||{};return dockerBuild(W,a,err,r)}
+  if(cmd==='docker'&&W.imgInfo&&(a[1]==='images'||(a[1]==='image'&&a[2]==='ls'))){W.f.images=true;const def={'nginx:1.27':'192MB','api:1.0':'88MB','postgres:16':'438MB'};
+    r.out=[pad('REPOSITORY',14)+pad('TAG',8)+'SIZE'].concat(W.images.slice().reverse().map(i=>{const[n,t]=i.split(':');return pad(n,14)+pad(t,8)+((W.imgInfo[i]&&W.imgInfo[i].size)||def[i]||'210MB')})).join('\n');return r}
+  if((cmd==='docker'&&a[1]==='compose')||cmd==='docker-compose')return compose(W,cmd==='docker'?a.slice(2):a.slice(1),err,r);
+  if(cmd==='terraform'&&W.tf)return terraform(W,a,err,r);
+  if((cmd==='ansible'||cmd==='ansible-playbook')&&W.ans)return ansible(W,a,line,err,r);
+  if(cmd==='kubectl'&&W.k8s){const x=kExt(W,a.slice(1),line,err,r);if(x)return x}
+  if(cmd==='helm'&&W.helm)return helm(W,a.slice(1),line,err,r);
+  if(cmd==='trivy')return trivy(W,a,err,r);
+  if(cmd==='gitleaks'&&W.leak)return gitleaks(W,a,err,r);
+  return null}
+
+/* git с ветками, слиянием и защитой main */
+function git2(W,a,err,r,line){const G=W.g;if(!W.cwd.startsWith(G.root))return err('fatal: not a git repository (or any of the parent directories): .git');
+  const v=a[0],hash=()=>Math.random().toString(16).slice(2,9),hasMarkers=t=>/^(<<<<<<<|=======|>>>>>>>)/m.test(t||'');
+  if(v==='status'){W.f.gstatus=true;const L=[`On branch ${G.branch}`];
+    if(G.merging&&G.conflicts.length){W.f.statusConflict=true;L.push('You have unmerged paths.\n  (fix conflicts and run "git commit")\n\nUnmerged paths:\n  (use "git add <file>..." to mark resolution)\n'+G.conflicts.map(f=>'\tboth modified:   '+f).join('\n'))}
+    else if(G.merging)L.push('All conflicts fixed but you are still merging.\n  (use "git commit" to conclude merge)');
+    if(G.staged.length)L.push('Changes to be committed:\n'+G.staged.map(f=>'\tmodified:   '+f).join('\n'));
+    if(G.modified.length)L.push('Changes not staged for commit:\n  (use "git add <file>..." to update what will be committed)\n'+G.modified.map(f=>'\tmodified:   '+f).join('\n'));
+    if(!G.merging&&!G.staged.length&&!G.modified.length)L.push('nothing to commit, working tree clean');r.out=L.join('\n\n');return r}
+  if(v==='branch'){if(a[1]&&!a[1].startsWith('-')){if(G.branches[a[1]])return err(`fatal: a branch named '${a[1]}' already exists`);G.branches[a[1]]=[...G.branches[G.branch]];return r}
+    r.out=Object.keys(G.branches).map(n=>(n===G.branch?'* ':'  ')+n).join('\n')+(a.includes('-a')?'\n'+G.remote.map(n=>'  remotes/origin/'+n).join('\n'):'');return r}
+  if(v==='switch'||v==='checkout'){const create=a.some(x=>/^(-c|-b|--create)$/.test(x)),name=a.slice(1).filter(x=>!x.startsWith('-'))[0];
+    if(!name)return err(`usage: git ${v} ${v==='switch'?'-c':'-b'} <ветка>`);if(G.merging)return err('error: you need to resolve your current index first');
+    if(create){if(G.branches[name])return err(`fatal: a branch named '${name}' already exists`);G.branches[name]=[...G.branches[G.branch]];G.branch=name;r.out=`Switched to a new branch '${name}'`;return r}
+    if(!G.branches[name])return err(`fatal: invalid reference: ${name}\nhint: чтобы создать ветку: git switch -c ${name}`);G.branch=name;r.out=`Switched to branch '${name}'`;return r}
+  if(v==='add'){const t=a[1];if(!t)return err('Nothing specified, nothing added.');const all=t==='.'||t==='-A'||t==='--all';
+    const pool=[...G.modified,...(G.merging?G.conflicts:[])],fs=pool.filter(f=>all||f===t.replace(/^\.\//,'')||G.root+'/'+f===rp(W,t));
+    if(!fs.length)return err(pool.length?`fatal: pathspec '${t}' did not match any files`:'Нечего добавлять: изменений нет');
+    for(const f of fs)if(!G.staged.includes(f))G.staged.push(f);G.modified=G.modified.filter(f=>!fs.includes(f));if(G.merging)G.conflicts=G.conflicts.filter(f=>!fs.includes(f));return r}
+  if(v==='commit'){const m=line.match(/-m\s+"([^"]+)"/)||line.match(/-m\s+'([^']+)'/)||line.match(/-m\s+(\S+)/);
+    if(G.merging){if(G.conflicts.length)return err('error: Committing is not possible because you have unmerged files.\nhint: Fix them up in the work tree, and then use git add <file>');
+      if(hasMarkers(W.files[G.root+'/config.yaml']))return err('В config.yaml остались маркеры конфликта <<<<<<< ======= >>>>>>>. git бы такое закоммитил, а прод — не переварит. Сначала почисти файл.');
+      const msg=m?m[1]:`Merge branch '${G.mergeFrom}' into ${G.branch}`,h=hash();G.branches[G.branch].push({h,msg});G.merging=false;G.staged=[];G.ahead++;W.f.merged=true;r.out=`[${G.branch} ${h}] ${msg}`;return r}
+    if(!m)return err('Укажи сообщение: git commit -m "что изменилось"');if(!G.staged.length)return err('nothing added to commit but untracked files present (сначала git add)');
+    const h=hash(),n=G.staged.length;G.branches[G.branch].push({h,msg:m[1]});G.staged=[];G.ahead++;r.out=`[${G.branch} ${h}] ${m[1]}\n ${n} file changed, 1 insertion(+), 1 deletion(-)`;return r}
+  if(v==='push'){const up=a.some(x=>x==='-u'||x==='--set-upstream'),pos=a.slice(1).filter(x=>!x.startsWith('-')),target=pos[1]||G.branch;
+    if(target==='main')return err('remote: error: GH006: Protected branch update failed for refs/heads/main.\nremote: Changes must be made through a pull request.\n ! [remote rejected] main -> main (protected branch hook declined)');
+    if(!G.upstream[G.branch]&&!up)return err(`fatal: The current branch ${G.branch} has no upstream branch.\nTo push the current branch and set the remote as upstream, use\n\n    git push --set-upstream origin ${G.branch}`);
+    if(!G.ahead&&G.remote.includes(G.branch)){r.out='Everything up-to-date';return r}
+    const isNew=!G.remote.includes(G.branch);G.upstream[G.branch]=true;if(isNew)G.remote.push(G.branch);G.pushed[G.branch]=G.branches[G.branch].length;G.ahead=0;W.f.pushed=G.branch;
+    r.out=isNew?`remote:\nremote: Create a pull request for '${G.branch}' on GitHub by visiting:\nremote:      https://github.com/uptime/shop/pull/new/${G.branch}\nremote:\nTo github.com:uptime/shop.git\n * [new branch]      ${G.branch} -> ${G.branch}\nbranch '${G.branch}' set up to track 'origin/${G.branch}'.`:`To github.com:uptime/shop.git\n   ${G.branch} -> ${G.branch}`;return r}
+  if(v==='merge'||v==='pull'||v==='rebase'){const from=v==='pull'?(a[2]||'main'):a.slice(1).filter(x=>!x.startsWith('-'))[0];if(!from)return err('укажи ветку: git merge main');
+    if(v==='rebase')return err('rebase в тренажёре пока нет. Здесь используй git merge main: в общей ветке это безопасный вариант.');
+    const src=from.replace(/^origin\//,'');if(!G.branches[src])return err(`merge: ${from} - not something we can merge`);
+    if(G.conflictOn&&src==='main'&&!G.mergedMain){G.merging=true;G.mergeFrom=src;G.conflicts=['config.yaml'];G.mergedMain=true;W.files[G.root+'/config.yaml']=G.conflictText;W.f.conflict=true;
+      r.out=(v==='pull'?'From github.com:uptime/shop\n * branch            main       -> FETCH_HEAD\n':'')+'Auto-merging config.yaml\nCONFLICT (content): Merge conflict in config.yaml\nAutomatic merge failed; fix conflicts and then commit the result.';r.cls='e';return r}
+    r.out='Already up to date.';return r}
+  if(v==='log'){const L=G.branches[G.branch].slice().reverse();r.out=L.map((c,i)=>`${a.includes('--graph')?'* ':''}${c.h} ${i===0?`(HEAD -> ${G.branch}) `:''}${c.msg}`).join('\n');return r}
+  if(v==='diff'){r.out=G.modified.map(f=>`diff --git a/${f} b/${f}\n--- a/${f}\n+++ b/${f}\n(изменён ${f})`).join('\n');return r}
+  if(['restore','reset','stash','cherry-pick','tag','fetch','clone','remote'].includes(v))return err(`git ${v} в тренажёре пока нет. В настоящем git команда работает.`);
+  return err('git: в тренажёре есть status, branch, switch, checkout, add, commit, push, merge, pull, log, diff')}
+
+/* docker build по настоящему Dockerfile из папки */
+function dockerBuild(W,a,err,r){let tag=null,file='Dockerfile',ctx=null;for(let i=2;i<a.length;i++){if(a[i]==='-t'||a[i]==='--tag')tag=a[++i];else if(a[i]==='-f'||a[i]==='--file')file=a[++i];else if(!a[i].startsWith('-'))ctx=a[i]}
+  if(!ctx)return err('ERROR: "docker buildx build" requires exactly 1 argument.\nУкажи контекст сборки, обычно это точка: docker build -t shop:1.0 .');
+  const p=rp(W,(ctx==='.'?'':ctx.replace(/\/$/,'')+'/')+file),src=W.files[p];if(src==null)return err('ERROR: failed to solve: failed to read dockerfile: open Dockerfile: no such file or directory');
+  tag=tag||'<none>:<none>';const froms=[...src.matchAll(/^\s*FROM\s+(\S+)/gim)].map(m=>m[1]),final=froms[froms.length-1]||'',multi=froms.length>1,small=/alpine|slim|distroless/.test(final);
+  const size=multi?(small?'168MB':'412MB'):(small?'240MB':'1.12GB');
+  const steps=src.split('\n').filter(l=>/^\s*(FROM|RUN|COPY|ADD|WORKDIR|USER|CMD|ENTRYPOINT|ENV|EXPOSE|ARG)\b/i.test(l)).map(l=>l.trim());
+  W.images=W.images.filter(i=>i!==tag);W.images.push(tag);W.imgInfo[tag]={size,froms,base:final};W.f.built=W.f.built||{};W.f.built[tag]=W.imgInfo[tag];
+  r.out=`[+] Building ${(18+steps.length*2.7).toFixed(1)}s (${steps.length+3}/${steps.length+3}) FINISHED\n => [internal] load build definition from ${file}\n => [internal] load .dockerignore\n${steps.map((l,i)=>` => [${i+1}/${steps.length}] ${l}`).join('\n')}\n => exporting to image\n => => naming to docker.io/library/${tag}`;return r}
+
+/* docker compose */
+function compose(W,a,err,r){const src=W.files[rp(W,'compose.yaml')]??W.files[rp(W,'docker-compose.yml')];if(src==null)return err('no configuration file provided: not found');const v=a[0];
+  if(v==='up'){const ok=COMPOSE_CHECKS.every(c=>c.test(src));W.compose={up:true,ok};W.f.composeUp=true;
+    r.out=` ✔ Network shop_default    Created\n${/volumes:/.test(src)?' ✔ Volume "shop_db-data"   Created\n':''} ✔ Container shop-db-1     Started\n ✔ Container shop-api-1    Started`+(a.includes('-d')?'':'\n(без -d стек занял бы терминал; с -d работает в фоне)');return r}
+  if(v==='ps'){if(!W.compose)return err('no containers found: сначала docker compose up -d');W.f.composePs=true;
+    r.out=`NAME          IMAGE         SERVICE   STATUS\nshop-api-1    shop:1.1      api       ${W.compose.ok?'Up 12 seconds':'Restarting (1) 2 seconds ago'}\nshop-db-1     postgres:16   db        Up 13 seconds`;return r}
+  if(v==='logs'){const s=a.slice(1).filter(x=>!x.startsWith('-'))[0];if(!W.compose)return err('no containers found');
+    r.out=s==='db'?'db-1  | LOG:  database system is ready to accept connections':(W.compose.ok?'api-1  | connected to postgres://shop:***@db:5432/shop\napi-1  | listening on :8080':'api-1  | Error: connect ECONNREFUSED 127.0.0.1:5432');return r}
+  if(v==='down'){W.compose=null;r.out=' ✔ Container shop-api-1    Removed\n ✔ Container shop-db-1     Removed\n ✔ Network shop_default    Removed';return r}
+  return err('docker compose: в тренажёре есть up, ps, logs, down')}
+
+/* terraform */
+function tfDesired(W){const t=W.files[W.tf.dir+'/main.tf']||'';return{web:(t.match(/instance_type\s*=\s*"([\w.]+)"/)||[])[1]||'?',bucket:/resource\s+"aws_s3_bucket"\s+"assets"/.test(t)}}
+function tfPlan(W){const d=tfDesired(W),s=W.tf.state,L=[];let add=0,chg=0;
+  if(d.web!==s.web){chg++;L.push(`  # aws_instance.web will be updated in-place\n  ~ resource "aws_instance" "web" {\n        id            = "i-0a1b2c3d4e5f60789"\n      ~ instance_type = "${s.web}" -> "${d.web}"\n        tags          = { "Name" = "shop-web" }\n    }`)}
+  if(d.bucket&&!s.bucket){add++;L.push(`  # aws_s3_bucket.assets will be created\n  + resource "aws_s3_bucket" "assets" {\n      + bucket = "uptime-shop-assets"\n      + id     = (known after apply)\n    }`)}
+  return{add,chg,text:L.length?`Terraform will perform the following actions:\n\n${L.join('\n\n')}\n\nPlan: ${add} to add, ${chg} to change, 0 to destroy.`:'No changes. Your infrastructure matches the configuration.'}}
+function terraform(W,a,err,r){const T=W.tf,v=a[1];
+  if(W.cwd!==T.dir)return err('Error: No configuration files\n\nВ этой папке нет .tf файлов. Перейди к коду инфраструктуры: cd ~/infra');
+  if(v==='init'){T.inited=true;r.out='Initializing the backend...\nInitializing provider plugins...\n- Finding hashicorp/aws versions matching "~> 5.0"...\n- Installing hashicorp/aws v5.72.1...\n\nTerraform has been successfully initialized!';r.cls='g';return r}
+  if(!T.inited)return err('Error: Required plugins are not installed\n│ Сначала выполни terraform init.');
+  if(v==='fmt')return r;if(v==='validate'){r.out='Success! The configuration is valid.';r.cls='g';return r}
+  if(v==='plan'){const p=tfPlan(W);W.f.tfPlan=(W.f.tfPlan||0)+1;r.out='aws_instance.web: Refreshing state... [id=i-0a1b2c3d4e5f60789]\n\n'+p.text;return r}
+  if(v==='apply'){const p=tfPlan(W);if(!p.add&&!p.chg){r.out='No changes. Your infrastructure matches the configuration.\n\nApply complete! Resources: 0 added, 0 changed, 0 destroyed.';return r}
+    if(a.includes('-auto-approve'))return tfApply(W,r);T.await=true;r.out=p.text+"\n\nDo you want to perform these actions?\n  Terraform will perform the actions described above.\n  Only 'yes' will be accepted to approve.\n\n  Enter a value: (введи yes)";return r}
+  if(v==='state'&&a[2]==='list'){r.out='aws_instance.web'+(T.state.bucket?'\naws_s3_bucket.assets':'');return r}
+  if(v==='destroy')return err('Утка заблокировала destroy на проде. И правильно сделала.');
+  return err('terraform: в тренажёре есть init, plan, apply, validate, fmt, state list')}
+function tfApply(W,r){const p=tfPlan(W),d=tfDesired(W);W.tf.state={web:d.web,bucket:d.bucket||W.tf.state.bucket};W.f.tfApplied=true;
+  r.out=(p.chg?'aws_instance.web: Modifying... [id=i-0a1b2c3d4e5f60789]\naws_instance.web: Modifications complete after 42s\n':'')+(p.add?'aws_s3_bucket.assets: Creating...\naws_s3_bucket.assets: Creation complete after 2s [id=uptime-shop-assets]\n':'')+`\nApply complete! Resources: ${p.add} added, ${p.chg} changed, 0 destroyed.`;r.cls='g';return r}
+
+/* ansible */
+function ansible(W,a,line,err,r){const inv=line.match(/-i\s+(\S+)/);
+  if(!inv)return err('[WARNING]: No inventory was parsed, only implicit localhost is available\nУкажи инвентарь: -i inventory.ini');
+  if(rp(W,inv[1])!==W.ans.dir+'/inventory.ini')return err(`[WARNING]: Unable to parse ${inv[1]} as an inventory source`);
+  if(a[0]==='ansible'){if(!a.includes('-m'))return err('укажи модуль: ansible web -i inventory.ini -m ping');W.f.ansPing=true;r.out=['web-1','web-2'].map(h=>`${h} | SUCCESS => {\n    "changed": false,\n    "ping": "pong"\n}`).join('\n');r.cls='g';return r}
+  const pb=a.slice(1).find(x=>/\.ya?ml$/.test(x));if(!pb)return err('ansible-playbook: укажи плейбук, например site.yml');const src=W.files[rp(W,pb)];if(src==null)return err(`ERROR! the playbook: ${pb} could not be found`);
+  if(!/hosts:\s*web\s*$/m.test(src))return err('[WARNING]: Could not match supplied host pattern\nskipping: no hosts matched (в инвентаре есть группа web)');
+  const check=a.includes('--check')||a.includes('-C');
+  if(!/become:\s*(true|yes)\b/.test(src)){r.out='PLAY [web] *****\n\nTASK [Gathering Facts] *****\nok: [web-1]\nok: [web-2]\n\nTASK [Установить nginx] *****\nfatal: [web-1]: FAILED! => {"msg": "Failed to lock apt for exclusive operation"}\nfatal: [web-2]: FAILED! => {"msg": "Failed to lock apt for exclusive operation"}\n\nPLAY RECAP *****\nweb-1 : ok=1 changed=0 failed=1\nweb-2 : ok=1 changed=0 failed=1\n\n(ставить пакеты можно только от root: нужен become: true)';r.cls='e';return r}
+  const chg=check||!W.ans.applied?2:0,st=chg?'changed':'ok';
+  r.out=`PLAY [web] ${check?'(--check: ничего не меняем) ':''}*****\n\nTASK [Gathering Facts] *****\nok: [web-1]\nok: [web-2]\n\nTASK [Установить nginx] *****\n${st}: [web-1]\n${st}: [web-2]\n\nTASK [Запустить nginx и включить автозапуск] *****\n${st}: [web-1]\n${st}: [web-2]\n\nPLAY RECAP *****\nweb-1 : ok=3 changed=${chg} unreachable=0 failed=0\nweb-2 : ok=3 changed=${chg} unreachable=0 failed=0`;
+  if(check)W.f.ansCheck=true;else{if(W.ans.applied)W.f.ansIdem=true;W.ans.applied=true}return r}
+
+/* kubectl: Service, endpoints, apply, Secret, логи упавших релизов */
+function kExt(W,a,line,err,r){const K=W.k8s,v=a[0],what=(a[1]||'').toLowerCase();
+  if(K.svc){
+    const eps=n=>{const S=K.svc[n];return K.pods.filter(p=>p.app===S.selector&&p.status==='Running').map(p=>kIp(p)+':'+S.targetPort)};
+    if(v==='get'&&/^(endpoints|ep)$/.test(what)){const n=a[2]||'web';if(!K.svc[n])return err(`Error from server (NotFound): endpoints "${n}" not found`);W.f.ep=(W.f.ep||0)+1;const e=eps(n);if(e.length)W.f.epOk=true;
+      r.out=`NAME   ENDPOINTS                                       AGE\n${pad(n,7)}${pad(e.length?e.join(','):'<none>',48)}12d`;return r}
+    if(v==='get'&&/^(svc|services?)$/.test(what)){r.out='NAME   TYPE        CLUSTER-IP    PORT(S)   AGE\n'+Object.entries(K.svc).map(([n,S])=>`${pad(n,7)}ClusterIP   10.43.17.40   ${S.port}/TCP    12d`).join('\n');return r}
+    if(v==='describe'&&/^(svc|services?)$/.test(what)){const n=a[2],S=K.svc[n];if(!S)return err(`Error from server (NotFound): services "${n||''}" not found`);W.f.svcDesc=true;const e=eps(n);
+      r.out=`Name:              ${n}\nNamespace:         prod\nSelector:          app=${S.selector}\nType:              ClusterIP\nIP:                10.43.17.40\nPort:              http  ${S.port}/TCP\nTargetPort:        ${S.targetPort}/TCP\nEndpoints:         ${e.length?e.join(','):'<none>'}`;return r}
+    if(v==='get'&&/^(ingress|ing)$/.test(what)){r.out='NAME   CLASS   HOSTS        ADDRESS        PORTS   AGE\nshop   nginx   shop.local   203.0.113.10   80      12d';return r}
+  }
+  if(v==='get'&&/^po/.test(what)&&a.includes('--show-labels')){kRecon(W);W.f.showLabels=true;r.out=[pad('NAME',20)+pad('READY',7)+pad('STATUS',10)+'LABELS'].concat(K.pods.map(p=>pad(p.name,20)+pad(p.status==='Running'?'1/1':'0/1',7)+pad(p.status,10)+`app=${p.app},pod-template-hash=7d9f`)).join('\n');return r}
+  if(v==='apply'){const f=line.match(/-f\s+(\S+)/);if(!f)return err('error: must specify one of -f and -k');const p=rp(W,f[1]),src=W.files[p];if(src==null)return err(`error: the path "${f[1]}" does not exist`);
+    if(/kind:\s*Service/.test(src)&&K.svc){const sel=(src.match(/selector:\s*\n\s+app:\s*([\w-]+)/)||[])[1]||'?',tp=(src.match(/targetPort:\s*(\d+)/)||[])[1];const S=K.svc.web;const same=S.selector===sel;S.selector=sel;if(tp)S.targetPort=+tp;W.f.applied=true;r.out=`service/web ${same?'unchanged':'configured'}`;return r}
+    if(/kind:\s*Deployment/.test(src)&&K.secrets){const d=K.deploys.shop;const needSecret=/secretKeyRef:[\s\S]*?name:\s*db\b/.test(src);W.f.deployApplied=true;W.f.deployGood=DEPLOY_CHECKS.every(c=>c.test(src));
+      K.pods.filter(p=>p.app==='shop').forEach(p=>p.status='Terminating');kRecon(W);
+      if(needSecret&&!K.secrets.db){d.waitSecret=true;K.pods.filter(p=>p.app==='shop'&&p.status==='ContainerCreating').forEach(p=>p.status='CreateContainerConfigError')}
+      r.out='deployment.apps/shop configured';return r}
+    return err('error: в этом файле нет ресурса, который знает тренажёр')}
+  if(v==='create'&&what==='secret'&&K.secrets){const name=a.slice(2).filter(x=>!x.startsWith('-'))[1];if(a[2]!=='generic'||!name)return err('usage: kubectl create secret generic <имя> --from-literal=ключ=значение');
+    if(!/--from-literal=\w+=\S+/.test(line))return err('error: укажи данные: --from-literal=password=...');if(K.secrets[name])return err(`error: failed to create secret secrets "${name}" already exists`);
+    K.secrets[name]=true;const d=K.deploys.shop;if(d&&d.waitSecret){d.waitSecret=false;K.pods.filter(p=>p.status==='CreateContainerConfigError').forEach(p=>{p.status='ContainerCreating';p.age=0})}r.out=`secret/${name} created`;r.cls='g';return r}
+  if(v==='get'&&/^secrets?$/.test(what)&&K.secrets){const L=Object.keys(K.secrets);r.out=L.length?'NAME   TYPE     DATA   AGE\n'+L.map(n=>`${pad(n,7)}Opaque   1      5s`).join('\n'):'No resources found in prod namespace.';return r}
+  if(v==='logs'||(v==='describe'&&/^po/.test(what))){const target=v==='logs'?a.slice(1).filter(x=>!x.startsWith('-'))[0]:a[2];if(!target)return null;
+    const p=target.includes('/')?K.pods.find(x=>x.app===target.split('/')[1]):kFind(W,target);if(!p)return null;
+    if(p.status==='CreateContainerConfigError')return v==='logs'?err(`Error from server (BadRequest): container "shop" in pod "${p.name}" is waiting to start: CreateContainerConfigError`):(r.out=`Name:       ${p.name}\nStatus:     Pending\nReason:     CreateContainerConfigError\nEvents:\n  Warning  Failed  kubelet  Error: secret "db" not found`,r);
+    if(v==='logs'&&p.app==='shop'&&K.deploys.shop&&!K.deploys.shop.ok){r.out=`> shop@${K.deploys.shop.image.split(':')[1]} start\n> node dist/server.js\n\nError: Cannot find module '/app/dist/server.js'\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1145:15)`;r.cls='e';return r}
+  }
+  return null}
+
+/* helm */
+function helm(W,a,line,err,r){const H=W.helm,v=a[0],K=W.k8s;
+  if(v==='repo'&&a[1]==='add'){if(!a[2]||!a[3])return err('usage: helm repo add <имя> <url>');H.repos[a[2]]=a[3];W.f.helmRepo=true;r.out=`"${a[2]}" has been added to your repositories`;return r}
+  if(v==='repo'&&(a[1]==='update'||a[1]==='list')){r.out=a[1]==='update'?'Hang tight while we grab the latest from your chart repositories...\nUpdate Complete. ⎈Happy Helming!⎈':'NAME\tURL\n'+Object.entries(H.repos).map(([n,u])=>n+'\t'+u).join('\n');return r}
+  if(v==='search'){if(!H.repos.shop)return err('Error: no repositories configured');r.out='NAME       CHART VERSION  APP VERSION  DESCRIPTION\nshop/shop  1.8.0          2.4          Интернет-магазин Uptime Shop';return r}
+  const sets={};for(const m of line.matchAll(/--set\s+([\w.]+)=(\S+)/g))sets[m[1]]=m[2];
+  const roll=tag=>{K.deploys.shop={replicas:2,image:'shop:'+tag,ok:tag!=='2.5',load:50};K.pods.filter(p=>p.app==='shop').forEach(p=>p.status='Terminating');kRecon(W)};
+  if(v==='install'||v==='upgrade'){const rel=a[1],chart=a[2];if(!rel||!chart||rel.startsWith('-'))return err(`usage: helm ${v} <релиз> <чарт>`);
+    const repo=chart.split('/')[0];if(!chart.includes('/')||!H.repos[repo])return err(`Error: ${v==='install'?'INSTALLATION':'UPGRADE'} FAILED: repo ${repo} not found. Сначала helm repo add`);
+    if(v==='install'&&H.rel[rel])return err('Error: INSTALLATION FAILED: cannot re-use a name that is still in use');
+    if(v==='upgrade'&&!H.rel[rel]&&!a.includes('--install'))return err(`Error: UPGRADE FAILED: "${rel}" has no deployed releases`);
+    const R=H.rel[rel]||(H.rel[rel]={hist:[]}),prev=R.hist[R.hist.length-1],tag=sets['image.tag']||(prev?prev.tag:'2.4');
+    R.hist.forEach(h=>h.status='superseded');R.hist.push({rev:R.hist.length+1,tag,status:'deployed',desc:prev?'Upgrade complete':'Install complete'});roll(tag);W.f['helm_'+v]=tag;
+    r.out=`${v==='upgrade'?`Release "${rel}" has been upgraded. Happy Helming!\n`:''}NAME: ${rel}\nLAST DEPLOYED: Thu Oct 22 10:14:02 2026\nNAMESPACE: prod\nSTATUS: deployed\nREVISION: ${R.hist.length}`;r.cls='g';return r}
+  if(v==='list'||v==='ls'){r.out=['NAME  NAMESPACE  REVISION  STATUS    CHART       APP VERSION'].concat(Object.entries(H.rel).map(([n,R])=>{const h=R.hist[R.hist.length-1];return `${pad(n,6)}prod       ${pad(R.hist.length,10)}${pad(h.status,10)}shop-1.8.0  ${h.tag}`})).join('\n');return r}
+  if(v==='history'){const R=H.rel[a[1]];if(!R)return err('Error: release: not found');W.f.helmHist=true;r.out=['REVISION  STATUS      CHART       APP VERSION  DESCRIPTION'].concat(R.hist.map(h=>`${pad(h.rev,10)}${pad(h.status,12)}shop-1.8.0  ${pad(h.tag,13)}${h.desc}`)).join('\n');return r}
+  if(v==='rollback'){const R=H.rel[a[1]];if(!R)return err('Error: release: not found');const to=+(a[2]||R.hist.length-1),tgt=R.hist.find(h=>h.rev===to);if(!tgt)return err(`Error: release has no ${to} version`);
+    R.hist.forEach(h=>h.status='superseded');R.hist.push({rev:R.hist.length+1,tag:tgt.tag,status:'deployed',desc:`Rollback to ${to}`});roll(tgt.tag);W.f.helmRollback=tgt.tag;r.out='Rollback was a success! Happy Helming!';r.cls='g';return r}
+  if(v==='uninstall')return err('Не надо удалять релиз в проде. Утка против.');
+  return err('helm: в тренажёре есть repo add/update/list, search, install, upgrade, list, history, rollback')}
+
+/* trivy */
+const VULNS=[['zlib1g','CVE-2022-37434','CRITICAL','1:1.2.11.dfsg-2','1:1.2.11.dfsg-2+deb11u2'],['libc6','CVE-2023-4911','HIGH','2.31-13+deb11u5','2.31-13+deb11u7'],['libssl1.1','CVE-2023-0286','HIGH','1.1.1n-0+deb11u3','1.1.1n-0+deb11u4'],['node','CVE-2023-44487','HIGH','16.20.2','нет: Node 16 вне поддержки (EOL)']];
+function trivy(W,a,err,r){if(a[1]!=='image'&&a[1]!=='i')return err('В тренажёре trivy сканирует образы: trivy image <образ>');
+  const args=a.slice(2),flags={};const pos=[];for(let i=0;i<args.length;i++){if(args[i]==='--severity'||args[i]==='-s')flags.sev=args[++i];else if(args[i]==='--exit-code')flags.exit=+args[++i];else if(args[i].startsWith('--severity='))flags.sev=args[i].split('=')[1];else if(args[i].startsWith('--exit-code='))flags.exit=+args[i].split('=')[1];else if(!args[i].startsWith('-'))pos.push(args[i])}
+  const img=pos[0];if(!img)return err('usage: trivy image <образ>');const info=W.imgInfo&&W.imgInfo[img];if(!info&&!W.images.includes(img))return err(`FATAL: unable to find the specified image "${img}"`);
+  const base=info?info.base:img,old=/node:(1\d|[0-9])\b|:latest\b/.test(base)||!/node:(2\d|[3-9]\d)/.test(base),small=/alpine|slim|distroless/.test(base);
+  let rows=old?VULNS:(small?[['busybox','CVE-2023-42366','LOW','1.36.1-r29','1.36.1-r30']]:[['perl-base','CVE-2023-31484','HIGH','5.36.0-7+deb12u1','']]);
+  const sev=(flags.sev||'').toUpperCase().split(',').filter(Boolean);if(sev.length)rows=rows.filter(x=>sev.includes(x[2]));
+  const n=s=>rows.filter(x=>x[2]===s).length;W.f.trivy=W.f.trivy||{};W.f.trivy[img]={crit:n('CRITICAL'),high:n('HIGH')};
+  const os=small?'alpine 3.20':'debian '+(old?'11.8':'12.7');
+  r.out=`${img} (${os})\n${'='.repeat(img.length+os.length+3)}\nTotal: ${rows.length} (${['CRITICAL','HIGH','MEDIUM','LOW'].filter(s=>!sev.length||sev.includes(s)).map(s=>s+': '+n(s)).join(', ')})\n`+(rows.length?'\n'+pad('Library',11)+pad('Vulnerability',16)+pad('Severity',10)+pad('Installed',20)+'Fixed\n'+rows.map(x=>pad(x[0],11)+pad(x[1],16)+pad(x[2],10)+pad(x[3],20)+(x[4]||'—')).join('\n'):'');
+  if(flags.exit&&rows.length){r.cls='e';r.exit=flags.exit}else if(n('CRITICAL')||n('HIGH'))r.cls='e';return r}
+
+/* gitleaks */
+function gitleaks(W,a,err,r){const v=a[1];
+  if(v==='detect'||v==='git'){W.f.leakScan=true;r.out='Finding:     const AWS_KEY = "AKIAIOSFODNN7EXAMPLE";\nSecret:      AKIAIOSFODNN7EXAMPLE\nRuleID:      aws-access-token\nEntropy:     3.65\nFile:        config/aws.js\nLine:        3\nCommit:      a1b2c3d\nAuthor:      vasya\nDate:        2026-10-14T18:22:41Z\n\nINF 37 commits scanned.\nWRN leaks found: 1';r.cls='e';r.exit=1;return r}
+  if(v==='dir'||v==='protect'){const leak=/AKIA[0-9A-Z]{16}/.test(W.files[W.leak.file]||'');if(!leak)W.f.leakDir=true;
+    r.out=leak?'Finding:     const AWS_KEY = "AKIAIOSFODNN7EXAMPLE";\nRuleID:      aws-access-token\nFile:        config/aws.js\nLine:        3\n\nWRN leaks found: 1':'INF scanned ~2.1 KB in 38ms\nINF no leaks found';r.cls=leak?'e':'g';if(leak)r.exit=1;return r}
+  return err('gitleaks: в тренажёре есть detect (вся история git) и dir . (текущие файлы)')}
+function complete(W,val){const parts=val.split(' '),last=parts.pop();const words=['kubectl','get','pods','deploy','top','logs','describe','delete','pod','scale','rollout','undo','status','--replicas=','docker','ps','run','images','stop','rm','systemctl','restart','nginx','grep','tail','cat','curl','localhost','git','add','commit','push','diff','gh','list','view','--log-failed','query','events','nodes','svc','history','--previous','-l','app=','journalctl','du','wc','chmod','chown','+x','enable','--now','is-enabled','dig','switch','-c','merge','main','build','compose','up','-d','terraform','init','plan','apply','yes','ansible','ansible-playbook','inventory.ini','site.yml','--check','endpoints','--show-labels','create','secret','generic','helm','repo','install','upgrade','rollback','trivy','image','gitleaks','detect','dir'];
   if(W.k8s)words.push(...W.k8s.pods.map(p=>p.name),...Object.keys(W.k8s.deploys).map(n=>'deployment/'+n));W.containers.forEach(c=>words.push(c.name));
-  if(/^(cat|cd|ls|tail|head|rm|grep)$/.test(parts[0]||'')||last.includes('/')){const base=last.includes('/')?last.slice(0,last.lastIndexOf('/')+1):'';const d=rp(W,base||'.');children(W,d).forEach(c=>words.push(base+c.n+(c.dir?'/':'')))}
+  if(/^(cat|cd|ls|tail|head|rm|grep|chmod|chown|bash|less|wc|sudo)$/.test(parts[0]||'')||parts.includes('-f')||last.startsWith('./')||last.includes('/')){const base=last.includes('/')?last.slice(0,last.lastIndexOf('/')+1):'';const d=rp(W,base||'.');children(W,d).forEach(c=>words.push(base+c.n+(c.dir?'/':'')))}
   const m=[...new Set(words)].filter(w=>w.startsWith(last)&&w!==last);if(m.length===1){parts.push(m[0]);return{val:parts.join(' ')+(m[0].endsWith('/')||m[0].endsWith('=')?'':' ')}}
   if(m.length>1){let p=m[0];for(const w of m)while(!w.startsWith(p))p=p.slice(0,-1);if(p.length>last.length){parts.push(p);return{val:parts.join(' ')}}return{list:m.slice(0,12).join('  ')}}return{}}
 
@@ -929,7 +1572,7 @@ function renderHome(){
   for(const u of UNITS){
     const doneN=u.lessons.filter(l=>S.done[l]).length;const uLocked=u.soon||!unlocked(u.lessons[0]);
     const sec=document.createElement('section');sec.className='unit'+(uLocked?' locked':'');sec.style.setProperty('--uc',u.c);
-    sec.innerHTML=`<div class="uhead" style="background:${u.c}"><div><small>Юнит ${u.n}</small><h2></h2><p></p></div><span class="cnt">${u.soon?'скоро':doneN+'/'+u.lessons.length}</span></div><div class="nodes"></div>`;
+    sec.innerHTML=`<div class="uhead" style="background:${u.c}"><div><small>Ступень ${u.n}${u.weeks?` · ${u.weeks}`:''}</small><h2></h2><p></p></div><span class="cnt">${u.soon?'скоро':doneN+'/'+u.lessons.length}</span></div><div class="nodes"></div>`;
     sec.querySelector('h2').textContent=u.title;sec.querySelector('p').textContent=u.sub;
     const nodes=sec.querySelector('.nodes');
     if(u.soon){const n=document.createElement('div');n.className='node locked';n.innerHTML=`<button class="nbtn" disabled aria-label="Скоро"><svg><use href="#i-lock"/></svg></button><span class="nlabel">Утка уже пишет уроки</span>`;nodes.append(n)}
@@ -938,6 +1581,12 @@ function renderHome(){
       n.innerHTML=`${cur?'<span class="start">Начать</span>':''}<button class="nbtn" ${open?'':'disabled'} aria-label="${esc(L.title)}"><svg><use href="#${L.boss?'i-pager':done?'i-check':open?(id==='l1'?'i-play':'i-term'):'i-lock'}"/></svg></button><span class="nlabel"></span>`;
       n.querySelector('.nlabel').textContent=L.title+(done?'':` · ${L.xp} XP`);
       if(open)n.querySelector('.nbtn').onclick=()=>startLesson(id);nodes.append(n)}
+    if(u.project&&!u.soon){const st=(S.proj||{})[u.id]||{},total=u.project.items.length,cnt=()=>u.project.items.filter((_,i)=>((S.proj||{})[u.id]||{})[i]).length;
+      const pj=document.createElement('details');pj.className='proj';pj.innerHTML=`<summary><span>Проект для портфолио</span><b>${cnt()}/${total}</b></summary><p></p><ul></ul><small>Делается вживую: на своей машине, VPS или в облаке. Отмечай пункты, когда сделаешь.</small>`;
+      pj.querySelector('p').textContent=u.project.text;const ul=pj.querySelector('ul');
+      u.project.items.forEach((it,i)=>{const li=document.createElement('li');li.innerHTML=`<label><input type="checkbox" ${st[i]?'checked':''}><span></span></label>`;li.querySelector('span').textContent=it;
+        li.querySelector('input').onchange=e=>{S.proj=S.proj||{};S.proj[u.id]=Object.assign({},S.proj[u.id],{[i]:e.target.checked});save();pj.querySelector('summary b').textContent=cnt()+'/'+total};ul.append(li)});
+      sec.append(pj)}
     P.append(sec)}
 }
 
@@ -961,8 +1610,15 @@ function setFoot(state,html,btnText,btnCls,hint){
 function renderStep(){
   const s=R.steps[R.i],B=$('#lBody');R.checked=false;R.cmds=[];R.keyH=null;
   $('#lProg').style.width=(Math.min(R.i,R.total)/R.total*100)+'%';$('#lHearts span').textContent=S.hearts;$('#lCombo').textContent=R.combo>=3?`×${R.combo} подряд`:'';
-  const kinds={learn:'Теория',quiz:'Вопрос',task:'Практика в терминале',script:'Код',edit:'Конфиг'};
+  const kinds={learn:'Теория',lecture:'Лекция',quiz:'Вопрос',task:'Практика в терминале',script:'Код',edit:'Конфиг'};
   B.innerHTML=`<span class="kind">${kinds[s.t]}${s.retry?' · повтор':''}</span>`;
+  if(s.t==='lecture'){const pg=s.page||0,P=s.pages[pg],last=pg>=s.pages.length-1;
+    const d=document.createElement('div');d.className='lec';
+    d.innerHTML=`<div class="lec-dots" aria-label="Карточка ${pg+1} из ${s.pages.length}">${s.pages.map((_,i)=>`<i class="${i<=pg?'on':''}"></i>`).join('')}</div><h2>${md(P.h)}</h2>${P.p?`<p>${md(P.p).replace(/\n/g,'<br>')}</p>`:''}${P.code?`<pre class="lec-code"></pre>`:''}${P.terms?`<dl class="lec-terms">${P.terms.map(([t,x])=>`<div><dt>${md(t)}</dt><dd>${md(x)}</dd></div>`).join('')}</dl>`:''}`;
+    if(P.code)d.querySelector('.lec-code').textContent=P.code;B.append(d);
+    setFoot('',pg===0?`${duckSVG('ok','duckmini')}<span style="color:var(--muted)">Короткая теория, потом практика.</span>`:'',last?'К практике':'Дальше','',pg>0);
+    if(pg>0){const hb=$('#lHint');hb.textContent='Назад';hb.onclick=()=>{s.page=pg-1;renderStep()}}
+    $('#lMain').onclick=()=>{if(last){s.page=0;next()}else{s.page=pg+1;renderStep()}};return}
   if(s.t==='learn'){const d=document.createElement('div');d.className='learn';d.innerHTML=`${duckSVG('ok')}<div style="display:flex;flex-direction:column;gap:10px"><h2>${md(s.h)}</h2><p>${md(s.p)}</p></div>`;B.append(d);setFoot('','','Дальше');$('#lMain').onclick=next;return}
   const h=document.createElement('h2');h.innerHTML=md(s.h);B.append(h);
   if(s.p){const p=document.createElement('p');p.innerHTML=md(s.p).replace(/\n/g,'<br>');B.append(p)}
@@ -1155,6 +1811,7 @@ let obGoal=30;
 document.querySelectorAll('#goals button').forEach(b=>b.onclick=()=>{obGoal=+b.dataset.g;document.querySelectorAll('#goals button').forEach(x=>x.setAttribute('aria-pressed',x===b))});
 $('#obGo').onclick=()=>{S.goal=obGoal;S.goalAt=0;S.onboarded=true;save();$('#onboard').hidden=true;renderHome()};
 $('#obDuck').innerHTML=duckSVG('happy');
+if(!S.rv2){S.review=(S.review||[]).map(x=>x.l==='l5'?{l:x.l,i:x.i+1}:x);S.rv2=true;save()}
 ensureDaily();heartsTick();renderHome();show('home');
 if(!S.onboarded)$('#onboard').hidden=false;
 setInterval(()=>{if(!$('#home').hidden){const h=S.hearts;heartsTick();if(S.hearts!==h)renderHome()}},30000);

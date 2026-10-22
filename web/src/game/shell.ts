@@ -1,6 +1,7 @@
 // @ts-nocheck — перенесено из однофайловой версии; типизация по мере рефакторинга
-import { kPod, CI_PATH } from './curriculum';
-import { line } from './ui';
+import { S } from './state';
+import { kPod, CI_PATH, COMPOSE_CHECKS, DEPLOY_CHECKS } from './curriculum';
+import { R, line } from './ui';
 import { G } from './boss';
 /* fake shell */
 export const pad=(s,n)=>String(s).padEnd(n);
@@ -21,16 +22,17 @@ export function splitTop(line,sep){const out=[];let cur='',q=null;for(let i=0;i<
   out.push(cur);return out.map(s=>s.trim())}
 export function sh(W,line){
   W.f.grep=null;W.f.lastFile=null;
-  const parts=splitTop(line,'&&').filter(Boolean);if(!parts.length)return{out:'',cls:''};
   const outs=[];let cls='',clear=false;
-  for(const part of parts){
+  for(const seg of splitTop(line,';').filter(Boolean)){
+  for(const part of splitTop(seg,'&&').filter(Boolean)){
     const stages=splitTop(part,'|').filter(Boolean);let res=sh1(W,stages[0]);
     if(res.clear){clear=true;outs.length=0;continue}
     for(const st of stages.slice(1)){if(res.cls==='e')break;const f=pipeFilter(W,res.out||'',st);res=f.err?{out:f.err,cls:'e'}:{out:f.out,cls:res.cls==='e'?'e':''}}
     if(/(kubectl|k)\s+get\s+po/.test(part)&&W.f.kdelAt!=null)W.f.kdelGetSameLine=true;
+    if(!/^\s*echo\s.*\$\?/.test(part))W.lastExit=res.exit!=null?res.exit:(res.cls==='e'?1:0);
     if(res.out)outs.push(res.out);if(res.cls)cls=res.cls;
-    if(res.cls==='e')break;
-  }
+    if(res.cls==='e'||res.exit)break;
+  }}
   return{out:outs.join('\n'),cls,clear:clear&&!outs.length}}
 export function pipeFilter(W,text,cmdline){
   const a=cmdline.trim().split(/\s+/).map(x=>x.replace(/^["']|["']$/g,''));const c=a[0];let L=text===''?[]:text.split('\n');
@@ -52,8 +54,9 @@ export function sh1(W,line){
   const r={out:'',cls:''};const a=line.trim().split(/\s+/).map(x=>x.replace(/^["']|["']$/g,''));let cmd=a[0];
   const err=m=>{r.out=m;r.cls='e';return r};
   if(cmd==='k')cmd='kubectl';
+  {const x=shExt(W,line,a,cmd,err,r);if(x)return x}
   switch(cmd){
-  case 'help':r.out='Доступно: pwd ls cd cat tail head grep ps kill df rm systemctl curl whoami hostname echo clear\n          docker ps|run|logs|stop|rm|images\n          kubectl get|describe|logs|delete|scale|top|rollout\n          git status|add|commit|push|log|diff   gh run list|view   query <promql>\nМожно: трубы | (grep, wc -l, head, tail, sort, uniq), цепочки &&, sudo.\nTab дополняет, ↑ повторяет команду.';r.cls='d';return r;
+  case 'help':r.out='Доступно: pwd ls cd cat tail head grep ps kill df rm systemctl curl whoami hostname echo clear\n          docker ps|run|logs|stop|rm|images\n          kubectl get|describe|logs|delete|scale|top|rollout\n          git status|add|commit|push|log|diff   gh run list|view   query <promql>\nМожно: трубы | (grep, wc -l, head, tail, sort, uniq), цепочки && и ;, sudo.\nВ уроках есть ещё: chmod chown dig git-ветки docker build/compose terraform ansible helm trivy gitleaks.\nTab дополняет, ↑ повторяет команду.';r.cls='d';return r;
   case 'pwd':r.out=W.cwd;return r;
   case 'whoami':r.out='dev';return r;
   case 'hostname':r.out='prod-web-01';return r;
@@ -97,7 +100,7 @@ export function sh1(W,line){
   case 'clear':r.clear=true;return r;
   case 'docker':return docker(W,a.slice(1),err,r);
   case 'kubectl':return kubectl(W,a.slice(1),err,r,line);
-  case 'sudo':return a[1]?sh1(W,line.trim().replace(/^sudo\s+/,'')):err('usage: sudo <команда>');
+  case 'sudo':{if(!a[1])return err('usage: sudo <команда>');W.sudo=true;try{return sh1(W,line.trim().replace(/^sudo\s+/,''))}finally{W.sudo=false}}
   default:return err(REAL_CMDS.includes(cmd)?`${cmd}: в тренажёре этой команды нет. В настоящем Linux она есть, но в уроках не понадобится.`:`${cmd}: command not found. Введи help`);
   }
 }
@@ -226,8 +229,260 @@ export function kubectl(W,a,err,r,line){
   return err(`error: неизвестная команда kubectl ${v||''}. Есть: get, describe, logs, delete, scale, rollout, top`);
 }
 
-export function complete(W,val){const parts=val.split(' '),last=parts.pop();const words=['kubectl','get','pods','deploy','top','logs','describe','delete','pod','scale','rollout','undo','status','--replicas=','docker','ps','run','images','stop','rm','systemctl','restart','nginx','grep','tail','cat','curl','localhost','git','add','commit','push','diff','gh','list','view','--log-failed','query','events','nodes','svc','history','--previous','-l','app=','journalctl','du','wc'];
+/* ---- расширения симулятора: права, systemd, DNS, git-ветки, docker build/compose, terraform, ansible, k8s, helm, trivy, gitleaks ---- */
+export const MODE_STR=m=>[...String(m).padStart(3,'0')].map(c=>{const n=+c;return(n&4?'r':'-')+(n&2?'w':'-')+(n&1?'x':'-')}).join('');
+export function permOf(W,p){return W.modes&&W.modes[p]!=null?String(W.modes[p]):(W.dirs.has(p)?'755':'644')}
+export function ownerOf(W,p){return (W.owners&&W.owners[p])||'dev:dev'}
+export function can(W,p,bit){if(W.sudo)return true;const m=permOf(W,p).padStart(3,'0');const[u,g]=ownerOf(W,p).split(':');const d=u==='dev'?+m[0]:(g==='dev'?+m[1]:+m[2]);return (d&bit)!==0}
+export function chmodApply(cur,spec){
+  if(/^[0-7]{3,4}$/.test(spec))return spec.slice(-3);
+  const m=spec.match(/^([ugoa]*)([+\-=])([rwx]+)$/);if(!m)return null;
+  const who=m[1]||'a',d=[...cur.padStart(3,'0')].map(Number),bits=[...m[3]].reduce((s,c)=>s|({r:4,w:2,x:1}[c]),0);
+  const idx=[];if(/[ua]/.test(who))idx.push(0);if(/[ga]/.test(who))idx.push(1);if(/[oa]/.test(who))idx.push(2);
+  for(const i of idx)d[i]=m[2]==='+'?d[i]|bits:m[2]==='-'?d[i]&~bits:bits;return d.join('')}
+export function scriptOut(W,p){
+  if(/healthcheck/.test(p)){const ok=W.svc.nginx&&W.svc.nginx.active;W.lastExit=ok?0:1;if(!ok)W.f.healthDown=true;return ok?{out:'OK: http://localhost/healthz отвечает',exit:0}:{out:'ERROR: http://localhost/healthz не отвечает',cls:'e',exit:1}}
+  const L=[];for(const l of (W.files[p]||'').split('\n')){const m=l.match(/^\s*echo\s+["']?(.*?)["']?\s*$/);if(m)L.push(m[1])}return{out:L.join('\n'),exit:0}}
+export function resolveHost(W,host){for(const l of (W.files['/etc/hosts']||'').split('\n')){const t=l.replace(/#.*/,'').trim().split(/\s+/);if(t.length>1&&t.slice(1).includes(host))return t[0]}return (W.dns&&W.dns[host])||null}
+export const kIp=p=>'10.42.'+(p.name.charCodeAt(p.name.length-3)%9)+'.'+(p.name.charCodeAt(p.name.length-2)%240+10);
+
+export function shExt(W,line,a,cmd,err,r){
+  if(W.tf&&W.tf.await){W.tf.await=false;if(cmd==='yes')return tfApply(W,r);return err('Error: Apply cancelled.\n(Terraform ждал ответа yes. Запусти terraform apply ещё раз.)')}
+  if(cmd==='echo'&&/\$\?/.test(line)){const code=W.lastExit==null?0:W.lastExit;if(code===1&&W.f.healthDown)W.f.sawExit1=true;r.out=line.replace(/^\s*echo\s+/,'').replace(/["']/g,'').replace(/\$\?/g,String(code));return r}
+  /* права и пользователи */
+  if(W.modes){
+    if(cmd==='id'){r.out='uid=1000(dev) gid=1000(dev) groups=1000(dev),27(sudo)';return r}
+    if(cmd==='ls'&&a.slice(1).some(x=>/^-\w*l/.test(x))){const{ar}=flagsArgs(a.slice(1));const t=rp(W,ar[0]);let list;
+      if(W.files[t]!=null)list=[{n:ar[0],p:t,dir:false}];else if(W.dirs.has(t))list=children(W,t);else return err(`ls: cannot access '${ar[0]}': No such file or directory`);
+      W.f.lsl=W.f.lsl||{};const rows=list.map(c=>{W.f.lsl[c.p]=true;const[u,g]=ownerOf(W,c.p).split(':');const sz=W.sizes[c.p]||(c.dir?'4096':String((W.files[c.p]||'').length));return `${c.dir?'d':'-'}${MODE_STR(permOf(W,c.p))} 1 ${pad(u,5)} ${pad(g,5)} ${String(sz).padStart(5)} Oct 21 03:00 ${c.n}`});
+      r.out=(W.files[t]!=null?'':'total '+list.length+'\n')+rows.join('\n');return r}
+    if(cmd==='chmod'){const{ar}=flagsArgs(a.slice(1));if(ar.length<2)return err('usage: chmod РЕЖИМ ФАЙЛ, например chmod +x deploy.sh или chmod 600 secret.env');
+      const p=rp(W,ar[1]);if(W.files[p]==null&&!W.dirs.has(p))return err(`chmod: cannot access '${ar[1]}': No such file or directory`);
+      if(!W.sudo&&ownerOf(W,p).split(':')[0]!=='dev')return err(`chmod: changing permissions of '${ar[1]}': Operation not permitted`);
+      const nm=chmodApply(permOf(W,p),ar[0]);if(!nm)return err(`chmod: invalid mode: '${ar[0]}'`);W.modes[p]=nm;return r}
+    if(cmd==='chown'){const{ar}=flagsArgs(a.slice(1));if(ar.length<2)return err('usage: chown ВЛАДЕЛЕЦ[:ГРУППА] ФАЙЛ');const p=rp(W,ar[1]);
+      if(W.files[p]==null&&!W.dirs.has(p))return err(`chown: cannot access '${ar[1]}': No such file or directory`);
+      if(!W.sudo)return err(`chown: changing ownership of '${ar[1]}': Operation not permitted`);
+      const[u,g]=ar[0].split(':');if(!['root','dev','shop','www-data','nginx'].includes(u))return err(`chown: invalid user: '${ar[0]}'`);W.owners[p]=u+':'+(g||ownerOf(W,p).split(':')[1]);return r}
+    if(['cat','less','tail','head','grep'].includes(cmd)){for(const f of a.slice(1).filter(x=>!x.startsWith('-'))){const p=rp(W,f);if(W.files[p]!=null&&!can(W,p,4))return err(`${cmd}: ${f}: Permission denied`)}}
+  }
+  /* запуск скриптов */
+  if(/^\.{0,2}\//.test(cmd)||((cmd==='bash'||cmd==='sh')&&a[1])){
+    const viaBash=cmd==='bash'||cmd==='sh',f=viaBash?a[1]:cmd,p=rp(W,f);
+    if(W.files[p]==null)return err(`-bash: ${f}: No such file or directory`);
+    if(viaBash?!can(W,p,4):!can(W,p,1)){W.f.execTried=p;return err(`-bash: ${f}: Permission denied`)}
+    W.f.execOk=p;const o=scriptOut(W,p);r.out=o.out;r.cls=o.cls||'';r.exit=o.exit;return r}
+  /* systemd: любые сервисы, кроме nginx (им занимается базовый терминал) */
+  if(cmd==='systemctl'&&a[2]&&!/^nginx/.test(a[a.length-1])){
+    const act=a[1],name=a[a.length-1].replace(/\.service$/,''),s=W.svc[name];if(!s)return err(`Unit ${name}.service could not be found.`);
+    const now=a.includes('--now'),started=()=>{if(!s.active){s.active=true;s.journal=(s.journal?s.journal+'\n':'')+`Oct 21 09:31:07 prod-web-01 systemd[1]: Started ${name}.service - ${s.desc||name}.`}};
+    if(act==='status'){W.f.svcStatus=name;r.out=`● ${name}.service - ${s.desc||name}\n     Loaded: loaded (/etc/systemd/system/${name}.service; ${s.enabled?'enabled':'disabled'}; preset: enabled)\n     Active: ${s.active?'active (running) since Wed 2026-10-21 09:31:07':'inactive (dead)'}`;if(!s.active)r.exit=3;return r}
+    if(act==='is-enabled'){W.f.isEnabled=name;r.out=s.enabled?'enabled':'disabled';if(!s.enabled)r.exit=1;return r}
+    if(act==='is-active'){r.out=s.active?'active':'inactive';if(!s.active)r.exit=3;return r}
+    if(act==='enable'){s.enabled=true;if(now)started();r.out=`Created symlink /etc/systemd/system/multi-user.target.wants/${name}.service → /etc/systemd/system/${name}.service.`;return r}
+    if(act==='disable'){s.enabled=false;if(now)s.active=false;r.out=`Removed "/etc/systemd/system/multi-user.target.wants/${name}.service".`;return r}
+    if(act==='start'||act==='restart'){started();return r}
+    if(act==='stop'){s.active=false;return r}
+    return err('systemctl: в тренажёре есть status, start, stop, restart, enable, disable, is-enabled, is-active')}
+  if(cmd==='journalctl'){const u=line.match(/-u\s+(\S+)/),name=u&&u[1].replace('.service','');if(name&&name!=='nginx'&&W.svc[name]){W.f.journal=name;r.out=W.svc[name].journal||'-- No entries --';return r}}
+  if(cmd==='crontab'){if(a[1]==='-l'){r.out=(W.files['/var/spool/cron/dev']||'').trim()||'no crontab for dev';return r}
+    if(a[1]==='-e')return err('crontab -e открывает редактор. В тренажёре расписание правится во вкладке редактора урока.');return err('usage: crontab -l')}
+  /* DNS и сеть */
+  if(W.dns){
+    if(cmd==='dig'||cmd==='nslookup'||cmd==='host'){const host=a.slice(1).filter(x=>!/^[+-]/.test(x))[0];if(!host)return err(`usage: ${cmd} <имя>`);W.f.dig=host;const ip=W.dns[host];
+      if(cmd==='dig'){if(a.includes('+short')){r.out=ip||'';return r}r.out=`; <<>> DiG 9.18.28 <<>> ${host}\n;; ->>HEADER<<- opcode: QUERY, status: ${ip?'NOERROR':'NXDOMAIN'}\n`+(ip?`\n;; ANSWER SECTION:\n${host}.\t\t300\tIN\tA\t${ip}\n`:'')+`\n;; Query time: 4 msec\n;; SERVER: 10.0.0.2#53(10.0.0.2) (UDP)`;return r}
+      if(cmd==='nslookup'){r.out=ip?`Server:\t\t10.0.0.2\nAddress:\t10.0.0.2#53\n\nName:\t${host}\nAddress: ${ip}`:`** server can't find ${host}: NXDOMAIN`;if(!ip)r.cls='e';return r}
+      r.out=ip?`${host} has address ${ip}`:`Host ${host} not found: 3(NXDOMAIN)`;return r}
+    if(cmd==='getent'&&a[1]==='hosts'){const ip=resolveHost(W,a[2]);W.f.getent=true;r.out=ip?`${ip}       ${a[2]}`:'';if(!ip)r.exit=2;return r}
+    if(cmd==='curl'){const v=a.some(x=>/^-\w*v/.test(x)||x==='--verbose'),u=a.slice(1).find(x=>!x.startsWith('-'))||'',m=u.replace(/^https?:\/\//,'').match(/^([\w.-]+)(?::(\d+))?/);if(!m)return err('curl: укажи адрес');
+      const host=m[1],port=+(m[2]||(u.startsWith('https')?443:80));if(host==='localhost'||host==='127.0.0.1')return null;
+      const ip=resolveHost(W,host);W.f.curlHost=host;if(v)W.f.curlV=true;
+      if(!ip)return err(`curl: (6) Could not resolve host: ${host}`);
+      const head=v?`* Host ${host}:${port} was resolved.\n* IPv4: ${ip}\n*   Trying ${ip}:${port}...\n`:'';
+      if(!(W.alive||[]).includes(ip)){r.out=head+`curl: (28) Failed to connect to ${host} port ${port} after 5002 ms: Timeout was reached`;r.cls='e';return r}
+      W.f.curlOk=host;r.out=head+(v?`* Connected to ${host} (${ip}) port ${port}\n> GET / HTTP/1.1\n> Host: ${host}\n>\n< HTTP/1.1 200 OK\n< Server: nginx/1.27.2\n<\n`:'')+'<!DOCTYPE html><html><head><title>Uptime Shop</title></head>…</html>';r.cls='g';return r}
+  }
+  if(cmd==='git'&&W.g)return git2(W,a.slice(1),err,r,line);
+  if(cmd==='docker'&&a[1]==='build'){W.imgInfo=W.imgInfo||{};return dockerBuild(W,a,err,r)}
+  if(cmd==='docker'&&W.imgInfo&&(a[1]==='images'||(a[1]==='image'&&a[2]==='ls'))){W.f.images=true;const def={'nginx:1.27':'192MB','api:1.0':'88MB','postgres:16':'438MB'};
+    r.out=[pad('REPOSITORY',14)+pad('TAG',8)+'SIZE'].concat(W.images.slice().reverse().map(i=>{const[n,t]=i.split(':');return pad(n,14)+pad(t,8)+((W.imgInfo[i]&&W.imgInfo[i].size)||def[i]||'210MB')})).join('\n');return r}
+  if((cmd==='docker'&&a[1]==='compose')||cmd==='docker-compose')return compose(W,cmd==='docker'?a.slice(2):a.slice(1),err,r);
+  if(cmd==='terraform'&&W.tf)return terraform(W,a,err,r);
+  if((cmd==='ansible'||cmd==='ansible-playbook')&&W.ans)return ansible(W,a,line,err,r);
+  if(cmd==='kubectl'&&W.k8s){const x=kExt(W,a.slice(1),line,err,r);if(x)return x}
+  if(cmd==='helm'&&W.helm)return helm(W,a.slice(1),line,err,r);
+  if(cmd==='trivy')return trivy(W,a,err,r);
+  if(cmd==='gitleaks'&&W.leak)return gitleaks(W,a,err,r);
+  return null}
+
+/* git с ветками, слиянием и защитой main */
+export function git2(W,a,err,r,line){const G=W.g;if(!W.cwd.startsWith(G.root))return err('fatal: not a git repository (or any of the parent directories): .git');
+  const v=a[0],hash=()=>Math.random().toString(16).slice(2,9),hasMarkers=t=>/^(<<<<<<<|=======|>>>>>>>)/m.test(t||'');
+  if(v==='status'){W.f.gstatus=true;const L=[`On branch ${G.branch}`];
+    if(G.merging&&G.conflicts.length){W.f.statusConflict=true;L.push('You have unmerged paths.\n  (fix conflicts and run "git commit")\n\nUnmerged paths:\n  (use "git add <file>..." to mark resolution)\n'+G.conflicts.map(f=>'\tboth modified:   '+f).join('\n'))}
+    else if(G.merging)L.push('All conflicts fixed but you are still merging.\n  (use "git commit" to conclude merge)');
+    if(G.staged.length)L.push('Changes to be committed:\n'+G.staged.map(f=>'\tmodified:   '+f).join('\n'));
+    if(G.modified.length)L.push('Changes not staged for commit:\n  (use "git add <file>..." to update what will be committed)\n'+G.modified.map(f=>'\tmodified:   '+f).join('\n'));
+    if(!G.merging&&!G.staged.length&&!G.modified.length)L.push('nothing to commit, working tree clean');r.out=L.join('\n\n');return r}
+  if(v==='branch'){if(a[1]&&!a[1].startsWith('-')){if(G.branches[a[1]])return err(`fatal: a branch named '${a[1]}' already exists`);G.branches[a[1]]=[...G.branches[G.branch]];return r}
+    r.out=Object.keys(G.branches).map(n=>(n===G.branch?'* ':'  ')+n).join('\n')+(a.includes('-a')?'\n'+G.remote.map(n=>'  remotes/origin/'+n).join('\n'):'');return r}
+  if(v==='switch'||v==='checkout'){const create=a.some(x=>/^(-c|-b|--create)$/.test(x)),name=a.slice(1).filter(x=>!x.startsWith('-'))[0];
+    if(!name)return err(`usage: git ${v} ${v==='switch'?'-c':'-b'} <ветка>`);if(G.merging)return err('error: you need to resolve your current index first');
+    if(create){if(G.branches[name])return err(`fatal: a branch named '${name}' already exists`);G.branches[name]=[...G.branches[G.branch]];G.branch=name;r.out=`Switched to a new branch '${name}'`;return r}
+    if(!G.branches[name])return err(`fatal: invalid reference: ${name}\nhint: чтобы создать ветку: git switch -c ${name}`);G.branch=name;r.out=`Switched to branch '${name}'`;return r}
+  if(v==='add'){const t=a[1];if(!t)return err('Nothing specified, nothing added.');const all=t==='.'||t==='-A'||t==='--all';
+    const pool=[...G.modified,...(G.merging?G.conflicts:[])],fs=pool.filter(f=>all||f===t.replace(/^\.\//,'')||G.root+'/'+f===rp(W,t));
+    if(!fs.length)return err(pool.length?`fatal: pathspec '${t}' did not match any files`:'Нечего добавлять: изменений нет');
+    for(const f of fs)if(!G.staged.includes(f))G.staged.push(f);G.modified=G.modified.filter(f=>!fs.includes(f));if(G.merging)G.conflicts=G.conflicts.filter(f=>!fs.includes(f));return r}
+  if(v==='commit'){const m=line.match(/-m\s+"([^"]+)"/)||line.match(/-m\s+'([^']+)'/)||line.match(/-m\s+(\S+)/);
+    if(G.merging){if(G.conflicts.length)return err('error: Committing is not possible because you have unmerged files.\nhint: Fix them up in the work tree, and then use git add <file>');
+      if(hasMarkers(W.files[G.root+'/config.yaml']))return err('В config.yaml остались маркеры конфликта <<<<<<< ======= >>>>>>>. git бы такое закоммитил, а прод — не переварит. Сначала почисти файл.');
+      const msg=m?m[1]:`Merge branch '${G.mergeFrom}' into ${G.branch}`,h=hash();G.branches[G.branch].push({h,msg});G.merging=false;G.staged=[];G.ahead++;W.f.merged=true;r.out=`[${G.branch} ${h}] ${msg}`;return r}
+    if(!m)return err('Укажи сообщение: git commit -m "что изменилось"');if(!G.staged.length)return err('nothing added to commit but untracked files present (сначала git add)');
+    const h=hash(),n=G.staged.length;G.branches[G.branch].push({h,msg:m[1]});G.staged=[];G.ahead++;r.out=`[${G.branch} ${h}] ${m[1]}\n ${n} file changed, 1 insertion(+), 1 deletion(-)`;return r}
+  if(v==='push'){const up=a.some(x=>x==='-u'||x==='--set-upstream'),pos=a.slice(1).filter(x=>!x.startsWith('-')),target=pos[1]||G.branch;
+    if(target==='main')return err('remote: error: GH006: Protected branch update failed for refs/heads/main.\nremote: Changes must be made through a pull request.\n ! [remote rejected] main -> main (protected branch hook declined)');
+    if(!G.upstream[G.branch]&&!up)return err(`fatal: The current branch ${G.branch} has no upstream branch.\nTo push the current branch and set the remote as upstream, use\n\n    git push --set-upstream origin ${G.branch}`);
+    if(!G.ahead&&G.remote.includes(G.branch)){r.out='Everything up-to-date';return r}
+    const isNew=!G.remote.includes(G.branch);G.upstream[G.branch]=true;if(isNew)G.remote.push(G.branch);G.pushed[G.branch]=G.branches[G.branch].length;G.ahead=0;W.f.pushed=G.branch;
+    r.out=isNew?`remote:\nremote: Create a pull request for '${G.branch}' on GitHub by visiting:\nremote:      https://github.com/uptime/shop/pull/new/${G.branch}\nremote:\nTo github.com:uptime/shop.git\n * [new branch]      ${G.branch} -> ${G.branch}\nbranch '${G.branch}' set up to track 'origin/${G.branch}'.`:`To github.com:uptime/shop.git\n   ${G.branch} -> ${G.branch}`;return r}
+  if(v==='merge'||v==='pull'||v==='rebase'){const from=v==='pull'?(a[2]||'main'):a.slice(1).filter(x=>!x.startsWith('-'))[0];if(!from)return err('укажи ветку: git merge main');
+    if(v==='rebase')return err('rebase в тренажёре пока нет. Здесь используй git merge main: в общей ветке это безопасный вариант.');
+    const src=from.replace(/^origin\//,'');if(!G.branches[src])return err(`merge: ${from} - not something we can merge`);
+    if(G.conflictOn&&src==='main'&&!G.mergedMain){G.merging=true;G.mergeFrom=src;G.conflicts=['config.yaml'];G.mergedMain=true;W.files[G.root+'/config.yaml']=G.conflictText;W.f.conflict=true;
+      r.out=(v==='pull'?'From github.com:uptime/shop\n * branch            main       -> FETCH_HEAD\n':'')+'Auto-merging config.yaml\nCONFLICT (content): Merge conflict in config.yaml\nAutomatic merge failed; fix conflicts and then commit the result.';r.cls='e';return r}
+    r.out='Already up to date.';return r}
+  if(v==='log'){const L=G.branches[G.branch].slice().reverse();r.out=L.map((c,i)=>`${a.includes('--graph')?'* ':''}${c.h} ${i===0?`(HEAD -> ${G.branch}) `:''}${c.msg}`).join('\n');return r}
+  if(v==='diff'){r.out=G.modified.map(f=>`diff --git a/${f} b/${f}\n--- a/${f}\n+++ b/${f}\n(изменён ${f})`).join('\n');return r}
+  if(['restore','reset','stash','cherry-pick','tag','fetch','clone','remote'].includes(v))return err(`git ${v} в тренажёре пока нет. В настоящем git команда работает.`);
+  return err('git: в тренажёре есть status, branch, switch, checkout, add, commit, push, merge, pull, log, diff')}
+
+/* docker build по настоящему Dockerfile из папки */
+export function dockerBuild(W,a,err,r){let tag=null,file='Dockerfile',ctx=null;for(let i=2;i<a.length;i++){if(a[i]==='-t'||a[i]==='--tag')tag=a[++i];else if(a[i]==='-f'||a[i]==='--file')file=a[++i];else if(!a[i].startsWith('-'))ctx=a[i]}
+  if(!ctx)return err('ERROR: "docker buildx build" requires exactly 1 argument.\nУкажи контекст сборки, обычно это точка: docker build -t shop:1.0 .');
+  const p=rp(W,(ctx==='.'?'':ctx.replace(/\/$/,'')+'/')+file),src=W.files[p];if(src==null)return err('ERROR: failed to solve: failed to read dockerfile: open Dockerfile: no such file or directory');
+  tag=tag||'<none>:<none>';const froms=[...src.matchAll(/^\s*FROM\s+(\S+)/gim)].map(m=>m[1]),final=froms[froms.length-1]||'',multi=froms.length>1,small=/alpine|slim|distroless/.test(final);
+  const size=multi?(small?'168MB':'412MB'):(small?'240MB':'1.12GB');
+  const steps=src.split('\n').filter(l=>/^\s*(FROM|RUN|COPY|ADD|WORKDIR|USER|CMD|ENTRYPOINT|ENV|EXPOSE|ARG)\b/i.test(l)).map(l=>l.trim());
+  W.images=W.images.filter(i=>i!==tag);W.images.push(tag);W.imgInfo[tag]={size,froms,base:final};W.f.built=W.f.built||{};W.f.built[tag]=W.imgInfo[tag];
+  r.out=`[+] Building ${(18+steps.length*2.7).toFixed(1)}s (${steps.length+3}/${steps.length+3}) FINISHED\n => [internal] load build definition from ${file}\n => [internal] load .dockerignore\n${steps.map((l,i)=>` => [${i+1}/${steps.length}] ${l}`).join('\n')}\n => exporting to image\n => => naming to docker.io/library/${tag}`;return r}
+
+/* docker compose */
+export function compose(W,a,err,r){const src=W.files[rp(W,'compose.yaml')]??W.files[rp(W,'docker-compose.yml')];if(src==null)return err('no configuration file provided: not found');const v=a[0];
+  if(v==='up'){const ok=COMPOSE_CHECKS.every(c=>c.test(src));W.compose={up:true,ok};W.f.composeUp=true;
+    r.out=` ✔ Network shop_default    Created\n${/volumes:/.test(src)?' ✔ Volume "shop_db-data"   Created\n':''} ✔ Container shop-db-1     Started\n ✔ Container shop-api-1    Started`+(a.includes('-d')?'':'\n(без -d стек занял бы терминал; с -d работает в фоне)');return r}
+  if(v==='ps'){if(!W.compose)return err('no containers found: сначала docker compose up -d');W.f.composePs=true;
+    r.out=`NAME          IMAGE         SERVICE   STATUS\nshop-api-1    shop:1.1      api       ${W.compose.ok?'Up 12 seconds':'Restarting (1) 2 seconds ago'}\nshop-db-1     postgres:16   db        Up 13 seconds`;return r}
+  if(v==='logs'){const s=a.slice(1).filter(x=>!x.startsWith('-'))[0];if(!W.compose)return err('no containers found');
+    r.out=s==='db'?'db-1  | LOG:  database system is ready to accept connections':(W.compose.ok?'api-1  | connected to postgres://shop:***@db:5432/shop\napi-1  | listening on :8080':'api-1  | Error: connect ECONNREFUSED 127.0.0.1:5432');return r}
+  if(v==='down'){W.compose=null;r.out=' ✔ Container shop-api-1    Removed\n ✔ Container shop-db-1     Removed\n ✔ Network shop_default    Removed';return r}
+  return err('docker compose: в тренажёре есть up, ps, logs, down')}
+
+/* terraform */
+export function tfDesired(W){const t=W.files[W.tf.dir+'/main.tf']||'';return{web:(t.match(/instance_type\s*=\s*"([\w.]+)"/)||[])[1]||'?',bucket:/resource\s+"aws_s3_bucket"\s+"assets"/.test(t)}}
+export function tfPlan(W){const d=tfDesired(W),s=W.tf.state,L=[];let add=0,chg=0;
+  if(d.web!==s.web){chg++;L.push(`  # aws_instance.web will be updated in-place\n  ~ resource "aws_instance" "web" {\n        id            = "i-0a1b2c3d4e5f60789"\n      ~ instance_type = "${s.web}" -> "${d.web}"\n        tags          = { "Name" = "shop-web" }\n    }`)}
+  if(d.bucket&&!s.bucket){add++;L.push(`  # aws_s3_bucket.assets will be created\n  + resource "aws_s3_bucket" "assets" {\n      + bucket = "uptime-shop-assets"\n      + id     = (known after apply)\n    }`)}
+  return{add,chg,text:L.length?`Terraform will perform the following actions:\n\n${L.join('\n\n')}\n\nPlan: ${add} to add, ${chg} to change, 0 to destroy.`:'No changes. Your infrastructure matches the configuration.'}}
+export function terraform(W,a,err,r){const T=W.tf,v=a[1];
+  if(W.cwd!==T.dir)return err('Error: No configuration files\n\nВ этой папке нет .tf файлов. Перейди к коду инфраструктуры: cd ~/infra');
+  if(v==='init'){T.inited=true;r.out='Initializing the backend...\nInitializing provider plugins...\n- Finding hashicorp/aws versions matching "~> 5.0"...\n- Installing hashicorp/aws v5.72.1...\n\nTerraform has been successfully initialized!';r.cls='g';return r}
+  if(!T.inited)return err('Error: Required plugins are not installed\n│ Сначала выполни terraform init.');
+  if(v==='fmt')return r;if(v==='validate'){r.out='Success! The configuration is valid.';r.cls='g';return r}
+  if(v==='plan'){const p=tfPlan(W);W.f.tfPlan=(W.f.tfPlan||0)+1;r.out='aws_instance.web: Refreshing state... [id=i-0a1b2c3d4e5f60789]\n\n'+p.text;return r}
+  if(v==='apply'){const p=tfPlan(W);if(!p.add&&!p.chg){r.out='No changes. Your infrastructure matches the configuration.\n\nApply complete! Resources: 0 added, 0 changed, 0 destroyed.';return r}
+    if(a.includes('-auto-approve'))return tfApply(W,r);T.await=true;r.out=p.text+"\n\nDo you want to perform these actions?\n  Terraform will perform the actions described above.\n  Only 'yes' will be accepted to approve.\n\n  Enter a value: (введи yes)";return r}
+  if(v==='state'&&a[2]==='list'){r.out='aws_instance.web'+(T.state.bucket?'\naws_s3_bucket.assets':'');return r}
+  if(v==='destroy')return err('Утка заблокировала destroy на проде. И правильно сделала.');
+  return err('terraform: в тренажёре есть init, plan, apply, validate, fmt, state list')}
+export function tfApply(W,r){const p=tfPlan(W),d=tfDesired(W);W.tf.state={web:d.web,bucket:d.bucket||W.tf.state.bucket};W.f.tfApplied=true;
+  r.out=(p.chg?'aws_instance.web: Modifying... [id=i-0a1b2c3d4e5f60789]\naws_instance.web: Modifications complete after 42s\n':'')+(p.add?'aws_s3_bucket.assets: Creating...\naws_s3_bucket.assets: Creation complete after 2s [id=uptime-shop-assets]\n':'')+`\nApply complete! Resources: ${p.add} added, ${p.chg} changed, 0 destroyed.`;r.cls='g';return r}
+
+/* ansible */
+export function ansible(W,a,line,err,r){const inv=line.match(/-i\s+(\S+)/);
+  if(!inv)return err('[WARNING]: No inventory was parsed, only implicit localhost is available\nУкажи инвентарь: -i inventory.ini');
+  if(rp(W,inv[1])!==W.ans.dir+'/inventory.ini')return err(`[WARNING]: Unable to parse ${inv[1]} as an inventory source`);
+  if(a[0]==='ansible'){if(!a.includes('-m'))return err('укажи модуль: ansible web -i inventory.ini -m ping');W.f.ansPing=true;r.out=['web-1','web-2'].map(h=>`${h} | SUCCESS => {\n    "changed": false,\n    "ping": "pong"\n}`).join('\n');r.cls='g';return r}
+  const pb=a.slice(1).find(x=>/\.ya?ml$/.test(x));if(!pb)return err('ansible-playbook: укажи плейбук, например site.yml');const src=W.files[rp(W,pb)];if(src==null)return err(`ERROR! the playbook: ${pb} could not be found`);
+  if(!/hosts:\s*web\s*$/m.test(src))return err('[WARNING]: Could not match supplied host pattern\nskipping: no hosts matched (в инвентаре есть группа web)');
+  const check=a.includes('--check')||a.includes('-C');
+  if(!/become:\s*(true|yes)\b/.test(src)){r.out='PLAY [web] *****\n\nTASK [Gathering Facts] *****\nok: [web-1]\nok: [web-2]\n\nTASK [Установить nginx] *****\nfatal: [web-1]: FAILED! => {"msg": "Failed to lock apt for exclusive operation"}\nfatal: [web-2]: FAILED! => {"msg": "Failed to lock apt for exclusive operation"}\n\nPLAY RECAP *****\nweb-1 : ok=1 changed=0 failed=1\nweb-2 : ok=1 changed=0 failed=1\n\n(ставить пакеты можно только от root: нужен become: true)';r.cls='e';return r}
+  const chg=check||!W.ans.applied?2:0,st=chg?'changed':'ok';
+  r.out=`PLAY [web] ${check?'(--check: ничего не меняем) ':''}*****\n\nTASK [Gathering Facts] *****\nok: [web-1]\nok: [web-2]\n\nTASK [Установить nginx] *****\n${st}: [web-1]\n${st}: [web-2]\n\nTASK [Запустить nginx и включить автозапуск] *****\n${st}: [web-1]\n${st}: [web-2]\n\nPLAY RECAP *****\nweb-1 : ok=3 changed=${chg} unreachable=0 failed=0\nweb-2 : ok=3 changed=${chg} unreachable=0 failed=0`;
+  if(check)W.f.ansCheck=true;else{if(W.ans.applied)W.f.ansIdem=true;W.ans.applied=true}return r}
+
+/* kubectl: Service, endpoints, apply, Secret, логи упавших релизов */
+export function kExt(W,a,line,err,r){const K=W.k8s,v=a[0],what=(a[1]||'').toLowerCase();
+  if(K.svc){
+    const eps=n=>{const S=K.svc[n];return K.pods.filter(p=>p.app===S.selector&&p.status==='Running').map(p=>kIp(p)+':'+S.targetPort)};
+    if(v==='get'&&/^(endpoints|ep)$/.test(what)){const n=a[2]||'web';if(!K.svc[n])return err(`Error from server (NotFound): endpoints "${n}" not found`);W.f.ep=(W.f.ep||0)+1;const e=eps(n);if(e.length)W.f.epOk=true;
+      r.out=`NAME   ENDPOINTS                                       AGE\n${pad(n,7)}${pad(e.length?e.join(','):'<none>',48)}12d`;return r}
+    if(v==='get'&&/^(svc|services?)$/.test(what)){r.out='NAME   TYPE        CLUSTER-IP    PORT(S)   AGE\n'+Object.entries(K.svc).map(([n,S])=>`${pad(n,7)}ClusterIP   10.43.17.40   ${S.port}/TCP    12d`).join('\n');return r}
+    if(v==='describe'&&/^(svc|services?)$/.test(what)){const n=a[2],S=K.svc[n];if(!S)return err(`Error from server (NotFound): services "${n||''}" not found`);W.f.svcDesc=true;const e=eps(n);
+      r.out=`Name:              ${n}\nNamespace:         prod\nSelector:          app=${S.selector}\nType:              ClusterIP\nIP:                10.43.17.40\nPort:              http  ${S.port}/TCP\nTargetPort:        ${S.targetPort}/TCP\nEndpoints:         ${e.length?e.join(','):'<none>'}`;return r}
+    if(v==='get'&&/^(ingress|ing)$/.test(what)){r.out='NAME   CLASS   HOSTS        ADDRESS        PORTS   AGE\nshop   nginx   shop.local   203.0.113.10   80      12d';return r}
+  }
+  if(v==='get'&&/^po/.test(what)&&a.includes('--show-labels')){kRecon(W);W.f.showLabels=true;r.out=[pad('NAME',20)+pad('READY',7)+pad('STATUS',10)+'LABELS'].concat(K.pods.map(p=>pad(p.name,20)+pad(p.status==='Running'?'1/1':'0/1',7)+pad(p.status,10)+`app=${p.app},pod-template-hash=7d9f`)).join('\n');return r}
+  if(v==='apply'){const f=line.match(/-f\s+(\S+)/);if(!f)return err('error: must specify one of -f and -k');const p=rp(W,f[1]),src=W.files[p];if(src==null)return err(`error: the path "${f[1]}" does not exist`);
+    if(/kind:\s*Service/.test(src)&&K.svc){const sel=(src.match(/selector:\s*\n\s+app:\s*([\w-]+)/)||[])[1]||'?',tp=(src.match(/targetPort:\s*(\d+)/)||[])[1];const S=K.svc.web;const same=S.selector===sel;S.selector=sel;if(tp)S.targetPort=+tp;W.f.applied=true;r.out=`service/web ${same?'unchanged':'configured'}`;return r}
+    if(/kind:\s*Deployment/.test(src)&&K.secrets){const d=K.deploys.shop;const needSecret=/secretKeyRef:[\s\S]*?name:\s*db\b/.test(src);W.f.deployApplied=true;W.f.deployGood=DEPLOY_CHECKS.every(c=>c.test(src));
+      K.pods.filter(p=>p.app==='shop').forEach(p=>p.status='Terminating');kRecon(W);
+      if(needSecret&&!K.secrets.db){d.waitSecret=true;K.pods.filter(p=>p.app==='shop'&&p.status==='ContainerCreating').forEach(p=>p.status='CreateContainerConfigError')}
+      r.out='deployment.apps/shop configured';return r}
+    return err('error: в этом файле нет ресурса, который знает тренажёр')}
+  if(v==='create'&&what==='secret'&&K.secrets){const name=a.slice(2).filter(x=>!x.startsWith('-'))[1];if(a[2]!=='generic'||!name)return err('usage: kubectl create secret generic <имя> --from-literal=ключ=значение');
+    if(!/--from-literal=\w+=\S+/.test(line))return err('error: укажи данные: --from-literal=password=...');if(K.secrets[name])return err(`error: failed to create secret secrets "${name}" already exists`);
+    K.secrets[name]=true;const d=K.deploys.shop;if(d&&d.waitSecret){d.waitSecret=false;K.pods.filter(p=>p.status==='CreateContainerConfigError').forEach(p=>{p.status='ContainerCreating';p.age=0})}r.out=`secret/${name} created`;r.cls='g';return r}
+  if(v==='get'&&/^secrets?$/.test(what)&&K.secrets){const L=Object.keys(K.secrets);r.out=L.length?'NAME   TYPE     DATA   AGE\n'+L.map(n=>`${pad(n,7)}Opaque   1      5s`).join('\n'):'No resources found in prod namespace.';return r}
+  if(v==='logs'||(v==='describe'&&/^po/.test(what))){const target=v==='logs'?a.slice(1).filter(x=>!x.startsWith('-'))[0]:a[2];if(!target)return null;
+    const p=target.includes('/')?K.pods.find(x=>x.app===target.split('/')[1]):kFind(W,target);if(!p)return null;
+    if(p.status==='CreateContainerConfigError')return v==='logs'?err(`Error from server (BadRequest): container "shop" in pod "${p.name}" is waiting to start: CreateContainerConfigError`):(r.out=`Name:       ${p.name}\nStatus:     Pending\nReason:     CreateContainerConfigError\nEvents:\n  Warning  Failed  kubelet  Error: secret "db" not found`,r);
+    if(v==='logs'&&p.app==='shop'&&K.deploys.shop&&!K.deploys.shop.ok){r.out=`> shop@${K.deploys.shop.image.split(':')[1]} start\n> node dist/server.js\n\nError: Cannot find module '/app/dist/server.js'\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1145:15)`;r.cls='e';return r}
+  }
+  return null}
+
+/* helm */
+export function helm(W,a,line,err,r){const H=W.helm,v=a[0],K=W.k8s;
+  if(v==='repo'&&a[1]==='add'){if(!a[2]||!a[3])return err('usage: helm repo add <имя> <url>');H.repos[a[2]]=a[3];W.f.helmRepo=true;r.out=`"${a[2]}" has been added to your repositories`;return r}
+  if(v==='repo'&&(a[1]==='update'||a[1]==='list')){r.out=a[1]==='update'?'Hang tight while we grab the latest from your chart repositories...\nUpdate Complete. ⎈Happy Helming!⎈':'NAME\tURL\n'+Object.entries(H.repos).map(([n,u])=>n+'\t'+u).join('\n');return r}
+  if(v==='search'){if(!H.repos.shop)return err('Error: no repositories configured');r.out='NAME       CHART VERSION  APP VERSION  DESCRIPTION\nshop/shop  1.8.0          2.4          Интернет-магазин Uptime Shop';return r}
+  const sets={};for(const m of line.matchAll(/--set\s+([\w.]+)=(\S+)/g))sets[m[1]]=m[2];
+  const roll=tag=>{K.deploys.shop={replicas:2,image:'shop:'+tag,ok:tag!=='2.5',load:50};K.pods.filter(p=>p.app==='shop').forEach(p=>p.status='Terminating');kRecon(W)};
+  if(v==='install'||v==='upgrade'){const rel=a[1],chart=a[2];if(!rel||!chart||rel.startsWith('-'))return err(`usage: helm ${v} <релиз> <чарт>`);
+    const repo=chart.split('/')[0];if(!chart.includes('/')||!H.repos[repo])return err(`Error: ${v==='install'?'INSTALLATION':'UPGRADE'} FAILED: repo ${repo} not found. Сначала helm repo add`);
+    if(v==='install'&&H.rel[rel])return err('Error: INSTALLATION FAILED: cannot re-use a name that is still in use');
+    if(v==='upgrade'&&!H.rel[rel]&&!a.includes('--install'))return err(`Error: UPGRADE FAILED: "${rel}" has no deployed releases`);
+    const R=H.rel[rel]||(H.rel[rel]={hist:[]}),prev=R.hist[R.hist.length-1],tag=sets['image.tag']||(prev?prev.tag:'2.4');
+    R.hist.forEach(h=>h.status='superseded');R.hist.push({rev:R.hist.length+1,tag,status:'deployed',desc:prev?'Upgrade complete':'Install complete'});roll(tag);W.f['helm_'+v]=tag;
+    r.out=`${v==='upgrade'?`Release "${rel}" has been upgraded. Happy Helming!\n`:''}NAME: ${rel}\nLAST DEPLOYED: Thu Oct 22 10:14:02 2026\nNAMESPACE: prod\nSTATUS: deployed\nREVISION: ${R.hist.length}`;r.cls='g';return r}
+  if(v==='list'||v==='ls'){r.out=['NAME  NAMESPACE  REVISION  STATUS    CHART       APP VERSION'].concat(Object.entries(H.rel).map(([n,R])=>{const h=R.hist[R.hist.length-1];return `${pad(n,6)}prod       ${pad(R.hist.length,10)}${pad(h.status,10)}shop-1.8.0  ${h.tag}`})).join('\n');return r}
+  if(v==='history'){const R=H.rel[a[1]];if(!R)return err('Error: release: not found');W.f.helmHist=true;r.out=['REVISION  STATUS      CHART       APP VERSION  DESCRIPTION'].concat(R.hist.map(h=>`${pad(h.rev,10)}${pad(h.status,12)}shop-1.8.0  ${pad(h.tag,13)}${h.desc}`)).join('\n');return r}
+  if(v==='rollback'){const R=H.rel[a[1]];if(!R)return err('Error: release: not found');const to=+(a[2]||R.hist.length-1),tgt=R.hist.find(h=>h.rev===to);if(!tgt)return err(`Error: release has no ${to} version`);
+    R.hist.forEach(h=>h.status='superseded');R.hist.push({rev:R.hist.length+1,tag:tgt.tag,status:'deployed',desc:`Rollback to ${to}`});roll(tgt.tag);W.f.helmRollback=tgt.tag;r.out='Rollback was a success! Happy Helming!';r.cls='g';return r}
+  if(v==='uninstall')return err('Не надо удалять релиз в проде. Утка против.');
+  return err('helm: в тренажёре есть repo add/update/list, search, install, upgrade, list, history, rollback')}
+
+/* trivy */
+export const VULNS=[['zlib1g','CVE-2022-37434','CRITICAL','1:1.2.11.dfsg-2','1:1.2.11.dfsg-2+deb11u2'],['libc6','CVE-2023-4911','HIGH','2.31-13+deb11u5','2.31-13+deb11u7'],['libssl1.1','CVE-2023-0286','HIGH','1.1.1n-0+deb11u3','1.1.1n-0+deb11u4'],['node','CVE-2023-44487','HIGH','16.20.2','нет: Node 16 вне поддержки (EOL)']];
+export function trivy(W,a,err,r){if(a[1]!=='image'&&a[1]!=='i')return err('В тренажёре trivy сканирует образы: trivy image <образ>');
+  const args=a.slice(2),flags={};const pos=[];for(let i=0;i<args.length;i++){if(args[i]==='--severity'||args[i]==='-s')flags.sev=args[++i];else if(args[i]==='--exit-code')flags.exit=+args[++i];else if(args[i].startsWith('--severity='))flags.sev=args[i].split('=')[1];else if(args[i].startsWith('--exit-code='))flags.exit=+args[i].split('=')[1];else if(!args[i].startsWith('-'))pos.push(args[i])}
+  const img=pos[0];if(!img)return err('usage: trivy image <образ>');const info=W.imgInfo&&W.imgInfo[img];if(!info&&!W.images.includes(img))return err(`FATAL: unable to find the specified image "${img}"`);
+  const base=info?info.base:img,old=/node:(1\d|[0-9])\b|:latest\b/.test(base)||!/node:(2\d|[3-9]\d)/.test(base),small=/alpine|slim|distroless/.test(base);
+  let rows=old?VULNS:(small?[['busybox','CVE-2023-42366','LOW','1.36.1-r29','1.36.1-r30']]:[['perl-base','CVE-2023-31484','HIGH','5.36.0-7+deb12u1','']]);
+  const sev=(flags.sev||'').toUpperCase().split(',').filter(Boolean);if(sev.length)rows=rows.filter(x=>sev.includes(x[2]));
+  const n=s=>rows.filter(x=>x[2]===s).length;W.f.trivy=W.f.trivy||{};W.f.trivy[img]={crit:n('CRITICAL'),high:n('HIGH')};
+  const os=small?'alpine 3.20':'debian '+(old?'11.8':'12.7');
+  r.out=`${img} (${os})\n${'='.repeat(img.length+os.length+3)}\nTotal: ${rows.length} (${['CRITICAL','HIGH','MEDIUM','LOW'].filter(s=>!sev.length||sev.includes(s)).map(s=>s+': '+n(s)).join(', ')})\n`+(rows.length?'\n'+pad('Library',11)+pad('Vulnerability',16)+pad('Severity',10)+pad('Installed',20)+'Fixed\n'+rows.map(x=>pad(x[0],11)+pad(x[1],16)+pad(x[2],10)+pad(x[3],20)+(x[4]||'—')).join('\n'):'');
+  if(flags.exit&&rows.length){r.cls='e';r.exit=flags.exit}else if(n('CRITICAL')||n('HIGH'))r.cls='e';return r}
+
+/* gitleaks */
+export function gitleaks(W,a,err,r){const v=a[1];
+  if(v==='detect'||v==='git'){W.f.leakScan=true;r.out='Finding:     const AWS_KEY = "AKIAIOSFODNN7EXAMPLE";\nSecret:      AKIAIOSFODNN7EXAMPLE\nRuleID:      aws-access-token\nEntropy:     3.65\nFile:        config/aws.js\nLine:        3\nCommit:      a1b2c3d\nAuthor:      vasya\nDate:        2026-10-14T18:22:41Z\n\nINF 37 commits scanned.\nWRN leaks found: 1';r.cls='e';r.exit=1;return r}
+  if(v==='dir'||v==='protect'){const leak=/AKIA[0-9A-Z]{16}/.test(W.files[W.leak.file]||'');if(!leak)W.f.leakDir=true;
+    r.out=leak?'Finding:     const AWS_KEY = "AKIAIOSFODNN7EXAMPLE";\nRuleID:      aws-access-token\nFile:        config/aws.js\nLine:        3\n\nWRN leaks found: 1':'INF scanned ~2.1 KB in 38ms\nINF no leaks found';r.cls=leak?'e':'g';if(leak)r.exit=1;return r}
+  return err('gitleaks: в тренажёре есть detect (вся история git) и dir . (текущие файлы)')}
+export function complete(W,val){const parts=val.split(' '),last=parts.pop();const words=['kubectl','get','pods','deploy','top','logs','describe','delete','pod','scale','rollout','undo','status','--replicas=','docker','ps','run','images','stop','rm','systemctl','restart','nginx','grep','tail','cat','curl','localhost','git','add','commit','push','diff','gh','list','view','--log-failed','query','events','nodes','svc','history','--previous','-l','app=','journalctl','du','wc','chmod','chown','+x','enable','--now','is-enabled','dig','switch','-c','merge','main','build','compose','up','-d','terraform','init','plan','apply','yes','ansible','ansible-playbook','inventory.ini','site.yml','--check','endpoints','--show-labels','create','secret','generic','helm','repo','install','upgrade','rollback','trivy','image','gitleaks','detect','dir'];
   if(W.k8s)words.push(...W.k8s.pods.map(p=>p.name),...Object.keys(W.k8s.deploys).map(n=>'deployment/'+n));W.containers.forEach(c=>words.push(c.name));
-  if(/^(cat|cd|ls|tail|head|rm|grep)$/.test(parts[0]||'')||last.includes('/')){const base=last.includes('/')?last.slice(0,last.lastIndexOf('/')+1):'';const d=rp(W,base||'.');children(W,d).forEach(c=>words.push(base+c.n+(c.dir?'/':'')))}
+  if(/^(cat|cd|ls|tail|head|rm|grep|chmod|chown|bash|less|wc|sudo)$/.test(parts[0]||'')||parts.includes('-f')||last.startsWith('./')||last.includes('/')){const base=last.includes('/')?last.slice(0,last.lastIndexOf('/')+1):'';const d=rp(W,base||'.');children(W,d).forEach(c=>words.push(base+c.n+(c.dir?'/':'')))}
   const m=[...new Set(words)].filter(w=>w.startsWith(last)&&w!==last);if(m.length===1){parts.push(m[0]);return{val:parts.join(' ')+(m[0].endsWith('/')||m[0].endsWith('=')?'':' ')}}
   if(m.length>1){let p=m[0];for(const w of m)while(!w.startsWith(p))p=p.slice(0,-1);if(p.length>last.length){parts.push(p);return{val:parts.join(' ')}}return{list:m.slice(0,12).join('  ')}}return{}}
